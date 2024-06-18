@@ -1,0 +1,6 @@
+export enum WsStatus {
+	OK = 1000,
+	EXIT = 1001,
+	UNSUPPORTED_DATA = 1003,
+	ABNORMAL_CLOSURE = 1006
+}

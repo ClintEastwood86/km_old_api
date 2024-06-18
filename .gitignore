@@ -1,0 +1,10 @@
+node_modules
+.env
+tests
+upload
+dist
+data
+.vscode
+.env.*
+docker-compose.yml
+.DS_Store

@@ -1,0 +1,69 @@
+generator client {
+    provider        = "prisma-client-js"
+    output          = "./generated/movies"
+    previewFeatures = ["orderByNulls", "postgresqlExtensions"]
+    binaryTargets   = ["darwin-arm64", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+datasource db {
+    provider   = "postgresql"
+    url        = env("MOVIES_DATABASE")
+    extensions = [pg_trgm]
+}
+
+model Actor {
+    id          Int     @id @default(autoincrement())
+    birthday    String?
+    kinopoiskId Int     @unique
+    name        String
+    sex         String?
+    profession  Int
+    movies      Movie[] @relation("ActorToMovie")
+}
+
+model Genre {
+    id     Int     @id
+    name   String
+    movies Movie[] @relation("GenreToMovie")
+}
+
+model Country {
+    id     Int     @id
+    name   String
+    movies Movie[] @relation("CountryToMovie")
+}
+
+model Movie {
+    id             Int        @id
+    kinopoiskId    Int        @unique
+    imdbId         String?
+    nameOriginal   String?
+    nameRussian    String?
+    alias          String     @unique
+    premiere       DateTime?
+    ratingKp       Float?
+    ratingImdb     Float?
+    ageRestriction Int
+    description    String
+    slogan         String?
+    budget         String?
+    trailer        String?
+    type           MovieType?
+    timeMinutes    Int?
+    poster         String?
+    secondPoster   String?
+    actors         Actor[]    @relation("ActorToMovie")
+    countries      Country[]  @relation("CountryToMovie")
+    genres         Genre[]    @relation("GenreToMovie")
+}
+
+model Popular {
+    id     Int      @id @default(autoincrement())
+    date   DateTime @default(now())
+    movies Int[]
+}
+
+enum MovieType {
+    Film
+    Serial
+}
