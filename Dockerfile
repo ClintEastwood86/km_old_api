@@ -1,7 +1,7 @@
 FROM node:20-alpine as build
 WORKDIR /opt/app
 ADD *.json ./
-RUN npm i
+RUN npm ci
 ADD . .
 RUN npm run generate:common
 RUN npm run generate:movies
@@ -9,9 +9,8 @@ RUN npm run build
 
 FROM node:20-alpine
 WORKDIR /opt/app
-ADD package.json ./
-RUN npm i --omit=dev
-COPY --from=build ./opt/app/.env.production ./.env
+ADD package*.json ./
+RUN npm ci --omit=dev
 COPY --from=build ./opt/app/prisma ./prisma
 COPY --from=build ./opt/app/assets ./assets
 COPY --from=build ./opt/app/dist ./dist

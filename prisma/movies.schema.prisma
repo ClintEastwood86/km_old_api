@@ -2,7 +2,7 @@ generator client {
     provider        = "prisma-client-js"
     output          = "./generated/movies"
     previewFeatures = ["orderByNulls", "postgresqlExtensions"]
-    binaryTargets   = ["darwin-arm64", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x"]
+    binaryTargets   = ["darwin-arm64", "linux-musl-openssl-3.0.x", "debian-openssl-3.0.x", "native"]
 }
 
 datasource db {
