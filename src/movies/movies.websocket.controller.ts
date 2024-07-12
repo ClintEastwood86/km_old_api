@@ -34,7 +34,7 @@ export class MoviesWebSocketController extends BaseWebSocketController {
 
 	private onConnection(): void {
 		this.wss.on('connection', async (socket: WebSocket, req: IncomingMessage) => {
-			const domain = `https://${this.config.get('DOMAIN')}`;
+			const domain = this.config.get('DOMAIN');
 			const unauthorizedError = new HTTPError(HttpStatus.UNAUTHORIZED, 'onConnection', 'Не авторизован', {
 				error: 'Пройдите авторизацию'
 			});
