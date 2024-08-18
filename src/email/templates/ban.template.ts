@@ -2,7 +2,13 @@ import { join } from 'path';
 import { IEmailTemplate } from '../template.interface';
 import { path } from 'app-root-path';
 
-export const getBanEmailTemplate = (login: string, adminLogin: string, message: string, domain: string): IEmailTemplate => ({
+export const getBanEmailTemplate = (
+	login: string,
+	adminLogin: string,
+	message: string,
+	domain: string,
+	supportEmail: string
+): IEmailTemplate => ({
 	attachments: [
 		{
 			cid: 'logo',
@@ -45,16 +51,16 @@ export const getBanEmailTemplate = (login: string, adminLogin: string, message: 
 													style="font-family: Arial; font-size: 14px; line-height: 19px; color: rgb(252, 183, 79); font-weight: 400;">${adminLogin}</span></span><span
 												style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(255, 255, 255); display: block; margin-top: 18px;">Причина
 												блокировки: <span
-													style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(252, 183, 79);">${message}</span></span><span
+													style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(252, 183, 79);">${message} </span></span><span
 												style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(255, 255, 255); display: block; margin-top: 18px;">Если
 												вы хотите исправиться или считаете, что администратор не должен был Вас
 												наказывать, напишите нам на <a target="_blank"
-													href="mailto:support@${domain}"
+													href="mailto:${supportEmail}"
 													style="text-decoration: underline; color: rgb(252, 183, 79); font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px;"><span
-														style="font-family: Arial; font-size: 14px; line-height: 19px; color: rgb(252, 183, 79); font-weight: 400;">почту</span></a></span><span
+														style="font-family: Arial; font-size: 14px; line-height: 19px; color: rgb(252, 183, 79); font-weight: 400;">почту</span></a> </span><span
 												style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(255, 255, 255); display: block; margin-top: 18px;">В
 												том случае, если виноват администратор, мы выдадим вам компенсацию в
-												виде очков или множителя на неделю</span><span
+												виде очков или множителя на неделю. </span><span
 												style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(255, 255, 255); display: block; margin-top: 18px;">Поспешите,
 												иначе ваш аккаунт будет через 30 дней</span></td>
 									</tr>
@@ -64,8 +70,8 @@ export const getBanEmailTemplate = (login: string, adminLogin: string, message: 
 												сайт - <a href="${domain}" target="_blank"
 													style="color: rgb(72, 72, 72); text-decoration: underline;">${domain}</a></span><span
 												style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(72, 72, 72); display: block; margin-top: 16px;"><a
-													href="mailto:support@${domain}" target="_blank"
-													style="color: rgb(72, 72, 72); text-decoration: underline;">support@${domain}</a></span>
+													href="mailto:${supportEmail}" target="_blank"
+													style="color: rgb(72, 72, 72); text-decoration: underline;">${supportEmail}</a></span>
 										</td>
 									</tr>
 								</tbody>

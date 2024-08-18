@@ -2,7 +2,7 @@ import { join } from 'path';
 import { IEmailTemplate } from '../template.interface';
 import { path } from 'app-root-path';
 
-export const getConfirmEmailTemplate = (login: string, token: string, domain: string): IEmailTemplate => ({
+export const getConfirmEmailTemplate = (login: string, token: string, domain: string, supportEmail: string): IEmailTemplate => ({
 	attachments: [
 		{
 			cid: 'logo',
@@ -59,8 +59,8 @@ export const getConfirmEmailTemplate = (login: string, token: string, domain: st
 												сайт - <a href="${domain}" target="_blank"
 													style="color: rgb(72, 72, 72); text-decoration: underline;">${domain}</a></span><span
 												style="font-family: Arial; font-size: 14px; font-weight: 400; line-height: 19px; color: rgb(72, 72, 72); display: block; margin-top: 16px;"><a
-													href="mailto:support@${domain}" target="_blank"
-													style="color: rgb(72, 72, 72); text-decoration: underline;">support@${domain}</a></span></td>
+													href="mailto:${supportEmail}" target="_blank"
+													style="color: rgb(72, 72, 72); text-decoration: underline;">${supportEmail}</a></span></td>
 									</tr>
 								</tbody>
 							</table>

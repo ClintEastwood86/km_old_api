@@ -15,16 +15,20 @@ export class EmailService implements IEmailService {
 	private transporter: Transporter<SMTPTransport.SentMessageInfo>;
 	private fromEmail: string;
 	private domain: string;
+	private supportEmail: string;
+	private reportEmail: string;
 
 	constructor(@inject(TYPES.IConfigService) private configService: IConfigService) {
 		this.transporter = createTransport(getSMPTConfig(configService));
 		this.fromEmail = `KingMovies <${this.configService.get('SMTP_USER')}>`;
 		this.domain = this.configService.get('DOMAIN');
+		this.supportEmail = this.configService.get('SUPPORT_EMAIL');
+		this.reportEmail = this.configService.get('REPORT_EMAIL');
 	}
 
 	async sendBanEmail(address: string, login: string, admin: string, message: string): Promise<HTTPError | ReturnTypeSendEmail> {
 		try {
-			const { attachments, html } = getBanEmailTemplate(login, admin, message, this.domain);
+			const { attachments, html } = getBanEmailTemplate(login, admin, message, this.domain, this.supportEmail);
 			const { messageId } = await this.transporter.sendMail({
 				attachments,
 				from: this.fromEmail,
@@ -50,7 +54,7 @@ export class EmailService implements IEmailService {
 
 	async sendConfirmEmail(address: string, login: string, token: string): Promise<ReturnTypeSendEmail | HTTPError> {
 		try {
-			const { attachments, html } = getConfirmEmailTemplate(login, token, this.domain);
+			const { attachments, html } = getConfirmEmailTemplate(login, token, this.domain, this.supportEmail);
 			const { messageId } = await this.transporter.sendMail({
 				from: this.fromEmail,
 				to: address,
@@ -62,7 +66,6 @@ export class EmailService implements IEmailService {
 				messageId
 			};
 		} catch (error) {
-			//! что-то сделать с ошибкой об спаме
 			if (error instanceof Error) {
 				return new HTTPError(
 					HttpStatus.INTERNAL_SERVER_ERROR,
