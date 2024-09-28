@@ -9,6 +9,7 @@ import { TYPES } from '../types';
 import { inject, injectable } from 'inversify';
 import { HttpStatus } from '../helpers/http-status';
 import { getBanEmailTemplate } from './templates/ban.template';
+import { getForgotPasswordTemplate } from './templates/forgot-password.template';
 
 @injectable()
 export class EmailService implements IEmailService {
@@ -59,6 +60,34 @@ export class EmailService implements IEmailService {
 				from: this.fromEmail,
 				to: address,
 				subject: 'Verify E-Mail Address',
+				html,
+				attachments
+			});
+			return {
+				messageId
+			};
+		} catch (error) {
+			if (error instanceof Error) {
+				return new HTTPError(
+					HttpStatus.INTERNAL_SERVER_ERROR,
+					'EmailService',
+					`Не удалось отправить письмо на почту ${address}`,
+					{
+						error: error.message
+					}
+				);
+			}
+			return { messageId: '' };
+		}
+	}
+
+	async sendForgotPasswordEmail(address: string, login: string, token: string): Promise<ReturnTypeSendEmail | HTTPError> {
+		try {
+			const { attachments, html } = getForgotPasswordTemplate(login, token, this.domain, this.supportEmail);
+			const { messageId } = await this.transporter.sendMail({
+				from: this.fromEmail,
+				to: address,
+				subject: 'Forgot password',
 				html,
 				attachments
 			});

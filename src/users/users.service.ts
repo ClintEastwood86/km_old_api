@@ -24,7 +24,7 @@ import { IConfigService } from '../configs/config.service.interface';
 import { UserChangePasswordDto } from './dto/user-change-password.dto';
 import { HTTPErrorConstructor } from '../helpers/http-error-constructor';
 import { IAwardsService } from '../awards/awards.service.interface';
-import { randomBytes } from 'crypto';
+import { randomBytes, randomUUID } from 'crypto';
 import { IEmailService } from '../email/email.service.interface';
 import { IRanksService } from '../ranks/ranks.service.interface';
 import { GetUsersForAdminPanelDto } from './dto/get-users-for-admin-panel.dto';
@@ -323,6 +323,63 @@ export class UsersService implements IUsersService {
 
 		await this.usersRepository.updateUser(email, { password: user.entity.password });
 		this.logger.log(`[UsersService] Пользователь ${email} успешно сменил пароль`);
+	}
+
+	async changePasswordWithToken(token: string, newPassword: string): Promise<UserModel | HTTPError> {
+		const user = await this.usersRepository.findFirstUserBy({ forgotPasswordToken: token });
+		if (!user) {
+			return new HTTPError(HttpStatus.BAD_REQUEST, 'changePasswordWithToken', 'Неверный токен', {
+				error: 'Токен недействителен'
+			});
+		}
+
+		const salt = this.configService.get('SALT');
+		const entity = new User(
+			{
+				login: user.login,
+				email: user.email,
+				notification: user.notification,
+				confirmToken: user.confirmToken || '',
+				notificationToken: user.notificationToken
+			},
+			user.password
+		);
+		await entity.setPassword(newPassword, Number(salt));
+
+		const updatedUser = await this.usersRepository.updateUser(user.email, { password: entity.password });
+		if (!updatedUser) {
+			return new HTTPError(HttpStatus.INTERNAL_SERVER_ERROR, 'changePasswordWithToken', 'Ошибка на сервере', {
+				error: 'Не удалось сменить пароль. Попробуйте позже'
+			});
+		}
+
+		await this.usersRepository.updateUser(user.email, { forgotPasswordToken: null });
+
+		this.logger.log(`[UsersService] Пользователь ${user.email} успешно сменил пароль`);
+		return updatedUser;
+	}
+
+	async forgotPassword(email: string): Promise<void | HTTPError> {
+		const user = await this.usersRepository.findUnique(email);
+		if (!user) {
+			return new HTTPError(HttpStatus.NOT_FOUND, 'forgotPassword', 'Не найден', {
+				error: `Пользователь с email ${email} не найден`
+			});
+		}
+		const token = randomUUID();
+		const updatedUser = await this.usersRepository.updateUser(email, { forgotPasswordToken: token });
+
+		if (!updatedUser) {
+			return new HTTPError(HttpStatus.INTERNAL_SERVER_ERROR, 'forgotPassword', 'Ошибка на сервере', {
+				error: 'Не удалось запросить смену пароля. Попробуйте позже'
+			});
+		}
+
+		const sendEmailResult = await this.emailService.sendForgotPasswordEmail(updatedUser.email, updatedUser.login, token);
+		if (sendEmailResult instanceof Error) {
+			return sendEmailResult;
+		}
+		this.logger.log(`[UsersService] Пользователь ${updatedUser.email} запросил смену пароля`);
 	}
 
 	async refreshJwt(email: string): Promise<JwtResponse> {

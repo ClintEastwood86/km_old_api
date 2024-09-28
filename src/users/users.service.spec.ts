@@ -11,6 +11,7 @@ import 'reflect-metadata';
 import { UserRegisterDto } from './dto/user-register.dto';
 import { UserModel } from '@prisma/client';
 import { HTTPError } from '../errors/http-error';
+import { randomUUID } from 'crypto';
 
 const loggerServiceMock: ILoggerService = {
 	log: jest.fn(),
@@ -78,6 +79,7 @@ const returnUserModelByDto = (user: UserRegisterDto): UserModel => ({
 	updatedAt: new Date(),
 	email: user.email,
 	password: user.password,
+	forgotPasswordToken: randomUUID(),
 	notification: user.notification,
 	confirmToken: null,
 	notificationToken: '',

@@ -29,6 +29,7 @@ model UserModel {
     awardId             Int?
     marks               Int[]
     confirmToken        String?
+    forgotPasswordToken String?
     notificationToken   String
     blocked             Boolean             @default(false)
     updatedAvatarAt     DateTime?

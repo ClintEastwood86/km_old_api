@@ -27,6 +27,8 @@ import { Role } from '@prisma/client';
 import { UserBlockDto } from './dto/user-block.dto';
 import { AddPointsDto } from './dto/add-points.dto';
 import { GetUsersForAdminPanelDto } from './dto/get-users-for-admin-panel.dto';
+import { UserForgotPasswordDto } from './dto/user-forgot-password.dto';
+import { UserChangePasswordWithTokenDto } from './dto/user-change-password-with-token.dto';
 
 @injectable()
 export class UsersController extends BaseController {
@@ -96,6 +98,18 @@ export class UsersController extends BaseController {
 				method: 'put',
 				func: this.changePassword,
 				middlewares: [authMiddleware, authGuard, new ValidateMiddleware(UserChangePasswordDto)]
+			},
+			{
+				path: '/change/password/withToken',
+				method: 'put',
+				func: this.changePasswordWithToken,
+				middlewares: [new ValidateMiddleware(UserChangePasswordWithTokenDto)]
+			},
+			{
+				path: '/forgotPassword',
+				method: 'post',
+				func: this.forgotPassword,
+				middlewares: [new ValidateMiddleware(UserForgotPasswordDto)]
 			},
 			{
 				path: '/change/notification',
@@ -250,6 +264,28 @@ export class UsersController extends BaseController {
 
 	async changePassword({ body, user }: Request<{}, {}, UserChangePasswordDto>, res: Response, next: NextFunction): Promise<void> {
 		const result = await this.usersService.changePassword(user, body);
+		if (result instanceof Error) {
+			return next(result);
+		}
+		this.ok(res, {
+			status: HttpStatus.OK
+		});
+	}
+
+	async changePasswordWithToken(
+		{ body }: Request<{}, {}, UserChangePasswordWithTokenDto>,
+		res: Response,
+		next: NextFunction
+	): Promise<void> {
+		const result = await this.usersService.changePasswordWithToken(body.token, body.password);
+		if (result instanceof Error) {
+			return next(result);
+		}
+		this.ok(res, result);
+	}
+
+	async forgotPassword({ body }: Request<{}, {}, UserForgotPasswordDto>, res: Response, next: NextFunction): Promise<void> {
+		const result = await this.usersService.forgotPassword(body.email);
 		if (result instanceof Error) {
 			return next(result);
 		}

@@ -21,6 +21,8 @@ export interface IUsersService {
 	changeLogin(email: string, value: string): Promise<void | HTTPError>;
 	stateBlockUser(id: number, action: 'block' | 'unblock'): Promise<(UserModel & { oldLogin?: string }) | UserModel | HTTPError>;
 	changePassword(email: string, value: UserChangePasswordDto): Promise<void | HTTPError>;
+	forgotPassword(email: string): Promise<void | HTTPError>;
+	changePasswordWithToken(token: string, newPassword: string): Promise<UserModel | HTTPError>;
 	changeNotification(email: string): Promise<void | HTTPError>;
 	changeEmail(email: string, newEmail: string): Promise<void | HTTPError>;
 	deleteAccount(dto: UserLoginDto): Promise<void | HTTPError>;
