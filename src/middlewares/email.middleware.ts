@@ -8,7 +8,7 @@ export class EmailMiddleware extends BaseMiddleware {
 
 	constructor() {
 		super();
-		this.correntDomains = ['mail.ru', 'gmail.com', 'vk.com', 'yandex.ru'];
+		this.correntDomains = ['mail.ru', 'gmail.com', 'vk.com', 'yandex.ru', 'ya.ru'];
 	}
 
 	execute({ body }: Request, res: Response, next: NextFunction): void {
