@@ -34,27 +34,30 @@ model Country {
 }
 
 model Movie {
-    id             Int        @id
-    kinopoiskId    Int        @unique
-    imdbId         String?
-    nameOriginal   String?
-    nameRussian    String?
-    alias          String     @unique
-    premiere       DateTime?
-    ratingKp       Float?
-    ratingImdb     Float?
-    ageRestriction Int
-    description    String
-    slogan         String?
-    budget         String?
-    trailer        String?
-    type           MovieType?
-    timeMinutes    Int?
-    poster         String?
-    secondPoster   String?
-    actors         Actor[]    @relation("ActorToMovie")
-    countries      Country[]  @relation("CountryToMovie")
-    genres         Genre[]    @relation("GenreToMovie")
+    id              Int        @id
+    isBlocked       Boolean    @default(false)
+    kinopoiskId     Int        @unique
+    imdbId          String?
+    nameOriginal    String?
+    nameRussian     String?
+    alias           String     @unique
+    premiere        DateTime?
+    ratingKp        Float?
+    ratingKpCount   Int?
+    ratingImdb      Float?
+    ratingImdbCount Int?
+    ageRestriction  Int
+    description     String
+    slogan          String?
+    budget          String?
+    trailer         String?
+    type            MovieType?
+    timeMinutes     Int?
+    poster          String?
+    secondPoster    String?
+    actors          Actor[]    @relation("ActorToMovie")
+    countries       Country[]  @relation("CountryToMovie")
+    genres          Genre[]    @relation("GenreToMovie")
 }
 
 model Popular {
