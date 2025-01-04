@@ -42,7 +42,7 @@ export class MoviesRepository implements IMoviesRepository {
 	async findMovieByAlias(alias: string): Promise<MovieMoreInfo | null> {
 		try {
 			const movie = await this.database.client.movie.findUnique({
-				where: { alias },
+				where: { alias, isHidden: false },
 				include: {
 					actors: { select: { kinopoiskId: true, name: true, profession: true } },
 					countries: { select: { id: true } },
@@ -65,7 +65,7 @@ export class MoviesRepository implements IMoviesRepository {
 
 	async findMovieById(id: number): Promise<Movie | null> {
 		try {
-			return await this.database.client.movie.findUnique({ where: { id } });
+			return await this.database.client.movie.findUnique({ where: { id, isHidden: false } });
 		} catch (error) {
 			return null;
 		}
@@ -92,6 +92,7 @@ export class MoviesRepository implements IMoviesRepository {
 								{ alias: { equals: q, mode: Prisma.QueryMode.insensitive } }
 							]
 						},
+						{ isHidden: false },
 						skipAdultContentObject
 					],
 					countries: { some: { id: { in: country } } },
@@ -135,7 +136,7 @@ export class MoviesRepository implements IMoviesRepository {
 
 	async isMovieExist(id: number): Promise<boolean> {
 		try {
-			await this.database.client.movie.findUniqueOrThrow({ where: { id } });
+			await this.database.client.movie.findUniqueOrThrow({ where: { id, isHidden: false } });
 			return true;
 		} catch (error) {
 			return false;
@@ -150,7 +151,7 @@ export class MoviesRepository implements IMoviesRepository {
 		}
 		const randInt = Math.floor(Math.random() * (maxMovieId - 1) + 1);
 		const movie = await this.database.client.movie.findFirst({
-			where: { genres: { none: { id: 29 } }, id: randInt },
+			where: { genres: { none: { id: 29 } }, id: randInt, isHidden: false },
 			select: moviesSelectConfig
 		});
 		if (!movie) {
@@ -162,7 +163,7 @@ export class MoviesRepository implements IMoviesRepository {
 	async findMoviesByArrayId(array: number[], take: number, skip: number, sort?: SortMoviesEnumId): Promise<MovieShort[]> {
 		const moviesId = typeof sort == 'number' ? array : array.slice(skip, skip + take);
 		const movies = await this.database.client.movie.findMany({
-			where: { id: { in: moviesId } },
+			where: { id: { in: moviesId }, isHidden: false },
 			select: moviesSelectConfig,
 			orderBy: movieSorting.find((s) => s.id == (sort ?? SortMoviesEnumId.PremiereDesc))?.condition
 		});
@@ -179,9 +180,9 @@ export class MoviesRepository implements IMoviesRepository {
 	}
 
 	async checkMoviesByArrayId(moviesId: number[]): Promise<number[]> {
-		return (await this.database.client.movie.findMany({ where: { id: { in: moviesId } }, select: { id: true } })).map(
-			(m) => m.id
-		);
+		return (
+			await this.database.client.movie.findMany({ where: { id: { in: moviesId }, isHidden: false }, select: { id: true } })
+		).map((m) => m.id);
 	}
 
 	async addHistoryRecord(email: string, token: string, movieId: number): Promise<HistoryItem> {
