@@ -36,6 +36,7 @@ model Country {
 model Movie {
     id              Int        @id
     isBlocked       Boolean    @default(false)
+    isHidden       Boolean    @default(false)
     kinopoiskId     Int        @unique
     imdbId          String?
     nameOriginal    String?
