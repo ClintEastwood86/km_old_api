@@ -67,7 +67,7 @@ export class App {
 	}
 
 	private useMiddlewares(): void {
-		this.router.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://localhost', '*'] }));
+		this.router.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://localhost', 'http://46.253.143.132'] }));
 		this.router.use(json());
 		this.router.use(cookieParser());
 		this.app.use('/upload', express.static(join(__dirname + '/../upload')));
