@@ -10,7 +10,6 @@ datasource db {
     url        = env("MOVIES_DATABASE")
     extensions = [pg_trgm]
 }
-
 model Actor {
     id          Int     @id @default(autoincrement())
     birthday    String?
@@ -18,25 +17,25 @@ model Actor {
     name        String
     sex         String?
     profession  Int
-    movies      Movie[] @relation("ActorToMovie")
-}
-
-model Genre {
-    id     Int     @id
-    name   String
-    movies Movie[] @relation("GenreToMovie")
+    movies      Movie[]
 }
 
 model Country {
     id     Int     @id
     name   String
-    movies Movie[] @relation("CountryToMovie")
+    movies Movie[]
+}
+
+model Genre {
+    id     Int     @id
+    name   String
+    movies Movie[]
 }
 
 model Movie {
     id              Int        @id
     isBlocked       Boolean    @default(false)
-    isHidden       Boolean    @default(false)
+    isHidden        Boolean    @default(false)
     kinopoiskId     Int        @unique
     imdbId          String?
     nameOriginal    String?
@@ -56,9 +55,9 @@ model Movie {
     timeMinutes     Int?
     poster          String?
     secondPoster    String?
-    actors          Actor[]    @relation("ActorToMovie")
-    countries       Country[]  @relation("CountryToMovie")
-    genres          Genre[]    @relation("GenreToMovie")
+    actors          Actor[]
+    countries       Country[]
+    genres          Genre[]
     similarMovies   Movie[] @relation("Similar")
     similarTo       Movie[] @relation("Similar")
 }
