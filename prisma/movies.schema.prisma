@@ -59,6 +59,8 @@ model Movie {
     actors          Actor[]    @relation("ActorToMovie")
     countries       Country[]  @relation("CountryToMovie")
     genres          Genre[]    @relation("GenreToMovie")
+    similarMovies   Movie[] @relation("Similar")
+    similarTo       Movie[] @relation("Similar")
 }
 
 model Popular {

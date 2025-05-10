@@ -46,7 +46,8 @@ export class MoviesRepository implements IMoviesRepository {
 				include: {
 					actors: { select: { kinopoiskId: true, name: true, profession: true } },
 					countries: { select: { id: true } },
-					genres: { select: { id: true } }
+					genres: { select: { id: true } },
+					similarMovies: { select: moviesSelectConfig, take: 5 }
 				}
 			});
 			if (!movie) {
@@ -56,7 +57,13 @@ export class MoviesRepository implements IMoviesRepository {
 				...movie,
 				genres: movie.genres.map((g) => g.id) as number[],
 				countries: movie.countries.map((c) => c.id) as number[],
-				actors: movie.actors
+				actors: movie.actors,
+				similarMovies: movie.similarMovies.map((m) => {
+					return {
+						...m,
+						genres: m.genres.map((g) => g.id)
+					};
+				})
 			};
 		} catch (error) {
 			return null;
