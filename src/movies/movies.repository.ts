@@ -151,14 +151,11 @@ export class MoviesRepository implements IMoviesRepository {
 	}
 
 	async findRandomMovie(): Promise<MovieShort> {
-		const maxMovieId = (await this.database.client.movie.findFirst({ orderBy: { id: 'desc' } }))?.id;
-		if (!maxMovieId) {
-			this.logger.error('[moviesRepository] Ошибка при получении рандомного фильма');
-			return await this.findRandomMovie();
-		}
-		const randInt = Math.floor(Math.random() * (maxMovieId - 1) + 1);
+		const moviesCount = await this.database.client.movie.count({ where: { isHidden: false } });
+		const randomOffset = Math.floor(Math.random() * (moviesCount - 1) + 1);
 		const movie = await this.database.client.movie.findFirst({
-			where: { genres: { none: { id: 29 } }, id: randInt, isHidden: false },
+			where: { genres: { none: { id: 29 } }, isHidden: false },
+			skip: randomOffset,
 			select: moviesSelectConfig
 		});
 		if (!movie) {
