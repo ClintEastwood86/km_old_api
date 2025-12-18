@@ -23,6 +23,7 @@ import { CollectionsController } from './collections/collections.controller';
 import { IRanksService } from './ranks/ranks.service.interface';
 import { MoviesWebSocketController } from './movies/movies.websocket.controller';
 import { BonusController } from './bonus/bonus.controller';
+import { LeaderboardController } from './leaderboard/leaderboard.controller';
 
 @injectable()
 export class App {
@@ -49,7 +50,8 @@ export class App {
 		@inject(TYPES.CommentsController) private commentsController: CommentsController,
 		@inject(TYPES.CollectionsController) private collectionsController: CollectionsController,
 		@inject(TYPES.IRanksService) private ranksService: IRanksService,
-		@inject(TYPES.MoviesWebSocketController) private moviesWebSocketController: MoviesWebSocketController
+		@inject(TYPES.MoviesWebSocketController) private moviesWebSocketController: MoviesWebSocketController,
+		@inject(TYPES.LeaderboardController) private leaderboardController: LeaderboardController
 	) {
 		this.port = 3000;
 		this.app = express();
@@ -86,6 +88,7 @@ export class App {
 		this.router.use('/comments', this.commentsController.router.bind(this.commentsController));
 		this.router.use('/collections', this.collectionsController.router.bind(this.collectionsController));
 		this.router.use('/bonus', this.bonusController.router.bind(this.bonusController));
+		this.router.use('/leaderboard', this.leaderboardController.router.bind(this.leaderboardController));
 	}
 
 	private useWebSocketEvents(): void {

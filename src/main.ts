@@ -22,6 +22,7 @@ import { ScheduleService } from './schedule/schedule.service';
 import { commentsContainer } from './comments/comments.container';
 import { collectionsContainer } from './collections/collections.container';
 import { bonusContainer } from './bonus/bonus.container';
+import { leaderboardContainer } from './leaderboard/leaderboard.container';
 
 type ReturnTypeBootstrap = {
 	app: App;
@@ -52,6 +53,7 @@ const bootstrap = async (): Promise<ReturnTypeBootstrap> => {
 	container.load(commentsContainer);
 	container.load(collectionsContainer);
 	container.load(bonusContainer);
+	container.load(leaderboardContainer);
 
 	const app = container.get<App>(TYPES.Application);
 	app.setGlobalPrefix('api');

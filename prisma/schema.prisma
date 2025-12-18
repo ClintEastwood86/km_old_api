@@ -10,43 +10,44 @@ datasource db {
 }
 
 model UserModel {
-    id                  Int                 @id @default(autoincrement())
-    createdAt           DateTime            @default(now())
-    updatedAt           DateTime            @updatedAt
-    email               String              @unique
-    login               String              @unique
+    id                  Int                       @id @default(autoincrement())
+    createdAt           DateTime                  @default(now())
+    updatedAt           DateTime                  @updatedAt
+    email               String                    @unique
+    login               String                    @unique
     password            String
     avatar              String?
-    notification        Boolean             @default(false)
-    verified            Boolean             @default(false)
-    role                Role                @default(USER)
-    rankId              Int                 @default(1)
-    userPoints          Int                 @default(0)
+    notification        Boolean                   @default(false)
+    verified            Boolean                   @default(false)
+    role                Role                      @default(USER)
+    rankId              Int                       @default(1)
+    userPoints          Int                       @default(0)
     updatedEmailAt      DateTime?
     updatedLoginAt      DateTime?
-    watchedMinutes      Int                 @default(0)
+    watchedMinutes      Int                       @default(0)
     lastViewToken       String?
     awardId             Int?
     marks               Int[]
     confirmToken        String?
     forgotPasswordToken String?
     notificationToken   String
-    blocked             Boolean             @default(false)
+    blocked             Boolean                   @default(false)
     updatedAvatarAt     DateTime?
-    collections         Collection[]        @relation("creators")
+    collections         Collection[]              @relation("creators")
     comment             Comment[]
     historyPoints       PointsHistoryItem[]
-    awardSelected       Award?              @relation("selected", fields: [awardId], references: [id])
-    rank                Rank                @relation(fields: [rankId], references: [id])
-    collectionsDislikes Collection[]        @relation("collectionsDislikes")
-    collectionsLikes    Collection[]        @relation("collectionsLikes")
-    dislikes            Comment[]           @relation("dislikes")
-    subscriptions       Collection[]        @relation("followers")
-    likes               Comment[]           @relation("likes")
-    awardsOpen          Award[]             @relation("open")
+    awardSelected       Award?                    @relation("selected", fields: [awardId], references: [id])
+    rank                Rank                      @relation(fields: [rankId], references: [id])
+    collectionsDislikes Collection[]              @relation("collectionsDislikes")
+    collectionsLikes    Collection[]              @relation("collectionsLikes")
+    dislikes            Comment[]                 @relation("dislikes")
+    subscriptions       Collection[]              @relation("followers")
+    likes               Comment[]                 @relation("likes")
+    awardsOpen          Award[]                   @relation("open")
     history             HistoryItem[]
-    bonuses             Bonus[]             @relation("user")
-    bonusesGranted      Bonus[]             @relation("admin")
+    bonuses             Bonus[]                   @relation("user")
+    bonusesGranted      Bonus[]                   @relation("admin")
+    leaderboardHistory  LeaderboardUserSnapshot[]
 }
 
 model HistoryItem {
@@ -152,6 +153,21 @@ model Holidays {
     start DateTime
     end   DateTime
     bonus Int
+}
+
+model LeaderboardUserSnapshot {
+    id        Int       @id @default(autoincrement())
+    createdAt DateTime  @default(now())
+    year      Int
+    userId    Int
+    user      UserModel @relation(fields: [userId], references: [id])
+    rankId    Int
+
+    position       Int
+    pointsAchieved Int
+    minutesWatched Int
+
+    @@unique([year, userId])
 }
 
 enum StatusComment {

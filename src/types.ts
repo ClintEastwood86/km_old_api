@@ -37,5 +37,9 @@ export const TYPES = {
 	CollectionsController: Symbol.for('CollectionsController'),
 	BonusController: Symbol.for('BonusController'),
 
+	ILeaderboardService: Symbol.for('ILeaderboardService'),
+	ILeaderboardRepository: Symbol.for('ILeaderboardRepository'),
+	LeaderboardController: Symbol.for('LeaderboardController'),
+
 	MoviesWebSocketController: Symbol.for('MoviesWebSocketController')
 } satisfies Record<string, symbol>;
