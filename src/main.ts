@@ -23,6 +23,7 @@ import { commentsContainer } from './comments/comments.container';
 import { collectionsContainer } from './collections/collections.container';
 import { bonusContainer } from './bonus/bonus.container';
 import { leaderboardContainer } from './leaderboard/leaderboard.container';
+import { AppController } from './app.controller';
 
 type ReturnTypeBootstrap = {
 	app: App;
@@ -40,6 +41,7 @@ const appContainer = new ContainerModule((bind: interfaces.Bind) => {
 	bind<IScheduleService>(TYPES.IScheduleService).to(ScheduleService).inSingletonScope();
 	bind<CommonDatabase>(TYPES.CommonDatabase).to(CommonDatabase).inSingletonScope();
 	bind<MoviesDatabase>(TYPES.MoviesDatabase).to(MoviesDatabase).inSingletonScope();
+	bind<AppController>(TYPES.AppController).to(AppController).inSingletonScope();
 });
 
 const bootstrap = async (): Promise<ReturnTypeBootstrap> => {

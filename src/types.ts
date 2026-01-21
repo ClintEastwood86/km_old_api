@@ -28,6 +28,7 @@ export const TYPES = {
 	ICollectionsRepository: Symbol.for('ICollectionsRepository'),
 	IBonusRepository: Symbol.for('IBonusRepository'),
 
+	AppController: Symbol.for('AppController'),
 	UserController: Symbol.for('UserController'),
 	RanksController: Symbol.for('RanksController'),
 	PointsItemController: Symbol.for('PointsItemController'),

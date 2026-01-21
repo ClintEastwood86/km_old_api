@@ -24,6 +24,8 @@ import { IRanksService } from './ranks/ranks.service.interface';
 import { MoviesWebSocketController } from './movies/movies.websocket.controller';
 import { BonusController } from './bonus/bonus.controller';
 import { LeaderboardController } from './leaderboard/leaderboard.controller';
+import { loggerMiddleware } from './middlewares/logger.middleware';
+import { AppController } from './app.controller';
 
 @injectable()
 export class App {
@@ -36,6 +38,7 @@ export class App {
 
 	constructor(
 		@inject(TYPES.ILoggerService) private logger: ILoggerService,
+		@inject(TYPES.AppController) private appController: AppController,
 		@inject(TYPES.UserController) private usersController: UsersController,
 		@inject(TYPES.RanksController) private ranksController: RanksController,
 		@inject(TYPES.PointsItemController) private pointsItemController: PointsItemController,
@@ -71,6 +74,7 @@ export class App {
 	private useMiddlewares(): void {
 		this.router.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://localhost', 'http://46.253.143.132'] }));
 		this.router.use(json());
+		this.app.use(loggerMiddleware);
 		this.router.use(cookieParser());
 		this.app.use('/upload', express.static(join(__dirname + '/../upload')));
 	}
@@ -80,15 +84,16 @@ export class App {
 	}
 
 	private useRoutes(): void {
-		this.router.use('/users', this.usersController.router.bind(this.usersController));
-		this.router.use('/ranks', this.ranksController.router.bind(this.ranksController));
-		this.router.use('/points', this.pointsItemController.router.bind(this.pointsItemController));
-		this.router.use('/awards', this.awardsController.router.bind(this.awardsController));
-		this.router.use('/movies', this.moviesController.router.bind(this.moviesController));
-		this.router.use('/comments', this.commentsController.router.bind(this.commentsController));
-		this.router.use('/collections', this.collectionsController.router.bind(this.collectionsController));
-		this.router.use('/bonus', this.bonusController.router.bind(this.bonusController));
-		this.router.use('/leaderboard', this.leaderboardController.router.bind(this.leaderboardController));
+		this.app.use('/', this.appController.router);
+		this.router.use('/users', this.usersController.router);
+		this.router.use('/ranks', this.ranksController.router);
+		this.router.use('/points', this.pointsItemController.router);
+		this.router.use('/awards', this.awardsController.router);
+		this.router.use('/movies', this.moviesController.router);
+		this.router.use('/comments', this.commentsController.router);
+		this.router.use('/collections', this.collectionsController.router);
+		this.router.use('/bonus', this.bonusController.router);
+		this.router.use('/leaderboard', this.leaderboardController.router);
 	}
 
 	private useWebSocketEvents(): void {
