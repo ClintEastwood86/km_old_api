@@ -1,12 +1,18 @@
+import { ConfigService } from './configs/config.service';
+import { getSentryConfig } from './configs/sentry.config';
+import { LoggerService } from './logger/logger.service';
+import { init } from '@sentry/node';
+
+const config = new ConfigService(new LoggerService());
+init(getSentryConfig(config));
+
 import { Container, ContainerModule, interfaces } from 'inversify';
 import { App } from './app';
-import { ConfigService } from './configs/config.service';
 import { CommonDatabase } from './database/common.database';
 import { ExeptionFilter } from './errors/exeption.filter';
 import { IExeptionFilter } from './errors/exeption.filter.interface';
 import { FilesService } from './files/files.service';
 import { IFilesService } from './files/files.service.interface';
-import { LoggerService } from './logger/logger.service';
 import { ILoggerService } from './logger/logger.service.interface';
 import { pointsItemContainer } from './pointsItems/pointsItem.container';
 import { ranksContainer } from './ranks/ranks.container';
@@ -37,7 +43,7 @@ const appContainer = new ContainerModule((bind: interfaces.Bind) => {
 	bind<ILoggerService>(TYPES.ILoggerService).to(LoggerService).inSingletonScope();
 	bind<IFilesService>(TYPES.IFilesService).to(FilesService).inSingletonScope();
 	bind<IEmailService>(TYPES.IEmailService).to(EmailService).inSingletonScope();
-	bind<ConfigService>(TYPES.IConfigService).to(ConfigService).inSingletonScope();
+	bind<ConfigService>(TYPES.IConfigService).toConstantValue(config);
 	bind<IScheduleService>(TYPES.IScheduleService).to(ScheduleService).inSingletonScope();
 	bind<CommonDatabase>(TYPES.CommonDatabase).to(CommonDatabase).inSingletonScope();
 	bind<MoviesDatabase>(TYPES.MoviesDatabase).to(MoviesDatabase).inSingletonScope();
