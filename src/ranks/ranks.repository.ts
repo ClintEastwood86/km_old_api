@@ -19,9 +19,6 @@ export class RanksRepository implements IRanksRepository {
 		try {
 			return await this.database.client.rank.create({ data: { name, points, awardId } });
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return null;
 		}
 	}
@@ -33,9 +30,6 @@ export class RanksRepository implements IRanksRepository {
 				data: { name, points, awardId: awardId ?? null }
 			});
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return null;
 		}
 	}

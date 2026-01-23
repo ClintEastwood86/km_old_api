@@ -28,6 +28,7 @@ import { loggerMiddleware } from './middlewares/logger.middleware';
 import { AppController } from './app.controller';
 import { setupExpressErrorHandler } from '@sentry/node';
 import { sentryMiddleware } from './middlewares/sentry.middleware';
+import { MetricsMiddleware } from './middlewares/metrics.middleware';
 
 @injectable()
 export class App {
@@ -76,8 +77,9 @@ export class App {
 	private useMiddlewares(): void {
 		this.router.use(cors({ credentials: true, origin: ['http://localhost:3001', 'https://localhost', 'http://46.253.143.132'] }));
 		this.router.use(json());
-		this.app.use(loggerMiddleware);
 		this.app.use(sentryMiddleware);
+		this.app.use(new MetricsMiddleware().execute);
+		this.app.use(loggerMiddleware);
 		this.router.use(cookieParser());
 		this.app.use('/upload', express.static(join(__dirname + '/../upload')));
 	}
@@ -107,9 +109,9 @@ export class App {
 		await this.commonDatabase.connect();
 		await this.moviesDatabase.connect();
 
+		this.useMiddlewares();
 		this.useRoutes();
 		setupExpressErrorHandler(this.app);
-		this.useMiddlewares();
 		this.useExeptionFilter();
 
 		this.app.use(this.globalPrefix, this.router);
@@ -119,13 +121,19 @@ export class App {
 
 		this.useWebSocketEvents();
 		this.useProcesses();
-	}
 
-	close(): void {
-		this.server.close();
+		process.on('SIGTERM', this.closeServer.bind(this));
+		process.on('SIGINT', this.closeServer.bind(this));
 	}
 
 	setGlobalPrefix(prefix: string): void {
 		this.globalPrefix = '/' + prefix;
+	}
+
+	private async closeServer(): Promise<void> {
+		this.server.close();
+		await this.commonDatabase.disconnect();
+		await this.moviesDatabase.disconnect();
+		process.exit(0);
 	}
 }

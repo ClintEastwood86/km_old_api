@@ -7,7 +7,7 @@ export const loggerMiddleware = pinoHttp({
 	genReqId: () => randomUUID(),
 	autoLogging: {
 		ignore: (req) => {
-			return req.url ? req.url.startsWith('/uploads/') : false;
+			return req.url ? req.url.startsWith('/upload/') : false;
 		}
 	},
 	customLogLevel: (_, res, err) => {

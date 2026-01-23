@@ -7,18 +7,18 @@ import { HTTPError } from '../errors/http-error';
 import { HttpStatus } from '../helpers/http-status';
 import { AwardCategory, PointsHistoryItem, Prisma, Rank, UserModel } from '@prisma/client';
 import { IRanksRepository } from './ranks.repository.interface';
-import { ILoggerService } from '../logger/logger.service.interface';
 import { HTTPErrorConstructor } from '../helpers/http-error-constructor';
 import { IAwardsService } from '../awards/awards.service.interface';
 import { PointsItemRepository } from '../pointsItems/pointsItem.repository';
 import { RankCreateDto } from './dto/rank-create.dto';
 import { PointsItemCategory } from '../pointsItems/pointsItem.enum';
 import { IBonusRepository } from '../bonus/bonus.repository.interface';
+import { Logger } from 'pino';
+import { logger as globalLogger } from '../logger/logger';
 
 @injectable()
 export class RanksService implements IRanksService {
 	constructor(
-		@inject(TYPES.ILoggerService) private logger: ILoggerService,
 		@inject(TYPES.IUsersRepository) private usersRepository: IUsersRepository,
 		@inject(TYPES.IRanksRepository) private ranksRepository: IRanksRepository,
 		@inject(TYPES.IBonusRepository) private bonusRepository: IBonusRepository,
@@ -26,7 +26,7 @@ export class RanksService implements IRanksService {
 		@inject(TYPES.IPointsItemRepository) private pointsItemRepository: PointsItemRepository
 	) {}
 
-	async create(dto: RankCreateDto): Promise<Rank | HTTPError> {
+	async create(dto: RankCreateDto, logger: Logger): Promise<Rank | HTTPError> {
 		const checkResult = await this.preChangedCheck(dto);
 		if (checkResult instanceof Error) {
 			return checkResult;
@@ -37,11 +37,11 @@ export class RanksService implements IRanksService {
 				error: `Произошла ошибка при создании звания, попробуйте позже`
 			});
 		}
-		this.logger.log(`[RanksService] Создано новое звание ${dto.name}`);
+		logger.info(`Создано новое звание ${dto.name}`);
 		return rank;
 	}
 
-	async update(id: number, dto: RankCreateDto): Promise<Rank | HTTPError> {
+	async update(id: number, dto: RankCreateDto, logger: Logger): Promise<Rank | HTTPError> {
 		const existedRank = await this.ranksRepository.findRankById(id);
 		if (!existedRank) {
 			return new HTTPError(HttpStatus.NOT_FOUND, 'update', 'Не найдено', { error: `Звание с id ${id} не найдено` });
@@ -56,7 +56,7 @@ export class RanksService implements IRanksService {
 				error: `Произошла ошибка при создании звания, попробуйте позже`
 			});
 		}
-		this.logger.log(`[RanksService] Звание с id ${id} было изменено`);
+		logger.info(`Звание с id ${id} было изменено`);
 		return rank;
 	}
 
@@ -75,9 +75,12 @@ export class RanksService implements IRanksService {
 		return history;
 	}
 
-	async addPoints(options: AddPointsWithoutTemplate): Promise<number | HTTPError>;
-	async addPoints(options: AddPointsWithTemplate): Promise<number | HTTPError>;
-	async addPoints(options: AddPointsWithoutTemplate | AddPointsWithTemplate): Promise<number | HTTPError> {
+	async addPoints(options: AddPointsWithoutTemplate, logger?: Logger): Promise<number | HTTPError>;
+	async addPoints(options: AddPointsWithTemplate, logger?: Logger): Promise<number | HTTPError>;
+	async addPoints(
+		options: AddPointsWithoutTemplate | AddPointsWithTemplate,
+		logger: Logger = globalLogger
+	): Promise<number | HTTPError> {
 		const error = HTTPErrorConstructor.userNotFoundError(options.email);
 		const user = await this.usersRepository.findUnique(options.email);
 		if (!user) {
@@ -89,7 +92,7 @@ export class RanksService implements IRanksService {
 		if (this.isTemplateOptions(options)) {
 			const template = await this.pointsItemRepository.getById(options.category);
 			if (!template) {
-				this.logger.warn(`[RanksService] Шаблон с id ${options.category} не найден`);
+				logger.warn(`Шаблон с id ${options.category} не найден`);
 				return new HTTPError(HttpStatus.NOT_FOUND, 'addPoints', 'Не найдено', {
 					error: `Шаблон с id ${options.category} не найден`
 				});
@@ -101,7 +104,7 @@ export class RanksService implements IRanksService {
 			this.ranksRepository.addRecordInHistory(user.id, { multiplier: options.useMultiplier ? multiplier : 1, ...options }, false);
 		}
 		points = Math.ceil(points);
-		const nextRank = await this.checkForRankPromotion(user, user.userPoints + points);
+		const nextRank = await this.checkForRankPromotion(user, user.userPoints + points, logger);
 		const updatedUser = await this.usersRepository.updateUser(options.email, {
 			userPoints: user.userPoints + points,
 			rankId: nextRank ? nextRank.id : user.rankId
@@ -112,9 +115,9 @@ export class RanksService implements IRanksService {
 		}
 
 		if (nextRank) {
-			await this.awardsService.updateOpenAwardsInUser(user.id, AwardCategory.RANKS);
+			await this.awardsService.updateOpenAwardsInUser(user.id, AwardCategory.RANKS, logger);
 		}
-		await this.awardsService.updateOpenAwardsInUser(user.id, AwardCategory.POINTS);
+		await this.awardsService.updateOpenAwardsInUser(user.id, AwardCategory.POINTS, logger);
 
 		return updatedUser.userPoints;
 	}
@@ -146,10 +149,10 @@ export class RanksService implements IRanksService {
 			for (const user of users) {
 				await this.addPoints({ category: PointsItemCategory.Notification, email: user.email, useMultiplier: true });
 			}
-			this.logger.log(`[RankService] ${users.length} пользователей получили очки за подключённую рассылку`);
+			globalLogger.info(`[RankService] ${users.length} пользователей получили очки за подключённую рассылку`);
 		} catch (error) {
 			if (error instanceof Error) {
-				this.logger.error(`[RanksService] Произошла ошибка при добавлении очков за рассылку. ${error.message}`);
+				globalLogger.error(`[RanksService] Произошла ошибка при добавлении очков за рассылку. ${error.message}`);
 			}
 		}
 	}
@@ -168,7 +171,7 @@ export class RanksService implements IRanksService {
 		}
 	}
 
-	private async checkForRankPromotion(user: UserModel, updateUserPoints: number): Promise<Rank | false> {
+	private async checkForRankPromotion(user: UserModel, updateUserPoints: number, logger: Logger): Promise<Rank | false> {
 		// Проверка на максимальный ранг, если текущее обновленное кол-во очков больше у след. ранга, то повышаем
 		const nextRank = await this.ranksRepository.findRankById(user.rankId + 1);
 		if (!nextRank) {
@@ -177,7 +180,7 @@ export class RanksService implements IRanksService {
 		const result = updateUserPoints >= nextRank.points;
 		if (result) {
 			const correctRank = await this.ranksRepository.findFirstRankByLtPoints(updateUserPoints); // найду тот который надо
-			this.logger.log(`[RanksService] Пользователь ${user.login} повышен в звании до ${correctRank?.id}`);
+			logger.info(`[RanksService] Пользователь ${user.login} повышен в звании до ${correctRank?.id}`);
 			return correctRank as Rank;
 		}
 		return result;

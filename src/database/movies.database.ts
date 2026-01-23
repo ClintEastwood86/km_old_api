@@ -4,13 +4,30 @@ import { ILoggerService } from '../logger/logger.service.interface';
 import { TYPES } from '../types';
 import { IDatabaseService } from './database.service.interface';
 import 'reflect-metadata';
+import { onPrismaError, onPrismaWarn, onSlowPrismaQuery } from './database.handlers';
 
 @injectable()
 export class MoviesDatabase implements IDatabaseService<PrismaClient> {
 	client: PrismaClient;
 
 	constructor(@inject(TYPES.ILoggerService) private logger: ILoggerService) {
-		this.client = new PrismaClient();
+		const client = new PrismaClient({
+			log: [
+				{ level: 'query', emit: 'event' },
+				{ level: 'error', emit: 'event' },
+				{ level: 'warn', emit: 'event' }
+			]
+		});
+
+		client.$on('error', onPrismaError(logger));
+		client.$on('warn', onPrismaWarn(logger));
+		client.$on('query', (e) => {
+			if (e.duration >= 500) {
+				onSlowPrismaQuery(e, logger);
+			}
+		});
+
+		this.client = client;
 	}
 
 	async connect(): Promise<void> {

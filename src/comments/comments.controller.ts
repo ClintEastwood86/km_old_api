@@ -96,7 +96,7 @@ export class CommentsController extends BaseController {
 		this.create(res, createdComment);
 	}
 
-	async publishComment({ params }: Request, res: Response, next: NextFunction): Promise<void> {
+	async publishComment({ params, log }: Request, res: Response, next: NextFunction): Promise<void> {
 		const id = Number(params.id);
 		if (Number.isNaN(id)) {
 			return next(
@@ -105,7 +105,7 @@ export class CommentsController extends BaseController {
 				})
 			);
 		}
-		const comment = await this.commentsService.publishComment(id);
+		const comment = await this.commentsService.publishComment(id, log);
 		if (comment instanceof Error) {
 			return next(comment);
 		}
@@ -121,7 +121,7 @@ export class CommentsController extends BaseController {
 				})
 			);
 		}
-		const comment = await this.commentsService.rejectComment(id, req.body.cause, req.user);
+		const comment = await this.commentsService.rejectComment(id, req.body.cause, req.user, req.log);
 		if (comment instanceof Error) {
 			return next(comment);
 		}

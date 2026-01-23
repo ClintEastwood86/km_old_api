@@ -4,10 +4,11 @@ import { HTTPError } from '../errors/http-error';
 import { AttachedMoviesInCollection, ReturnTypeActionCollection } from './collections.types';
 import { CollectionCategory } from '../enums/collection.enum';
 import { CollectionActions } from '../enums/action.enum';
+import { Logger } from 'pino';
 
 export interface ICollectionsService {
 	get(email: string, take: number, skip: number): Promise<AttachedMoviesInCollection[]>;
-	create(dto: CreateCollectionDto, email: string): Promise<Collection | HTTPError>;
+	create(dto: CreateCollectionDto, email: string, logger: Logger): Promise<Collection | HTTPError>;
 	change(dto: CreateCollectionDto, id: number, email: string): Promise<Collection | HTTPError>;
 	findByQuery(q: string, take: number): Promise<AttachedMoviesInCollection[]>;
 	getById(id: number, token?: string): Promise<Collection | HTTPError>;

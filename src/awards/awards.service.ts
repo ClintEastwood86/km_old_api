@@ -8,6 +8,7 @@ import { HttpStatus } from '../helpers/http-status';
 import { ILoggerService } from '../logger/logger.service.interface';
 import { IAwardsRepository } from './awards.repository.interface';
 import { IUsersRepository } from '../users/users.repository.interface';
+import { Logger } from 'pino';
 
 @injectable()
 export class AwardsService implements IAwardsService {
@@ -17,7 +18,7 @@ export class AwardsService implements IAwardsService {
 		@inject(TYPES.IUsersRepository) private usersRepository: IUsersRepository
 	) {}
 
-	async create(dto: AwardCreateDto): Promise<HTTPError | Award> {
+	async create(dto: AwardCreateDto, logger: Logger): Promise<HTTPError | Award> {
 		const isValidCondition = await this.awardsRepository.isValidCondition(JSON.parse(dto.condition));
 		if (!isValidCondition) {
 			return new HTTPError(HttpStatus.BAD_REQUEST, 'create', 'Ошибка в условии', {
@@ -31,7 +32,7 @@ export class AwardsService implements IAwardsService {
 			});
 		}
 		await this.awardsRepository.addNewAwardUsers(award.id, JSON.parse(award.condition));
-		this.logger.log(`[AwardsService] Создан новый значок с именем ${dto.name}`);
+		logger.info(`Создан новый значок с именем ${dto.name}`);
 		return award;
 	}
 
@@ -78,7 +79,7 @@ export class AwardsService implements IAwardsService {
 		return awards.filter((award) => !openedAwardsId.includes(award.id));
 	}
 
-	async updateOpenAwardsInUser(userId: number, category: AwardCategory): Promise<void> {
+	async updateOpenAwardsInUser(userId: number, category: AwardCategory, logger: Logger): Promise<void> {
 		const possibleAwards = await this.selectUnopenedAwards(await this.usersRepository.getAwardsIdByUserId(userId), category);
 
 		for (let i = 0; i < possibleAwards.length; i++) {
@@ -87,12 +88,12 @@ export class AwardsService implements IAwardsService {
 				continue;
 			} else {
 				await this.usersRepository.addAwardByUserId(userId, possibleAwards[i].id);
-				this.logger.log(`Пользователь с id ${userId} получил значок ${possibleAwards[i].name}`);
+				logger.info(`Пользователь с id ${userId} получил значок ${possibleAwards[i].name}`);
 			}
 		}
 	}
 
-	async deleteById(id: number): Promise<Award | HTTPError> {
+	async deleteById(id: number, logger: Logger): Promise<Award | HTTPError> {
 		const existAward = await this.awardsRepository.getAwardById(id);
 		if (!existAward) {
 			return new HTTPError(HttpStatus.NOT_FOUND, 'deleteById', 'Не найдено', { error: `Не найдено значок с id ${id}` });
@@ -103,7 +104,7 @@ export class AwardsService implements IAwardsService {
 				error: `Не удалось удалить значок с id ${id}. Повторите позже`
 			});
 		}
-		this.logger.log(`[AwardService] Значок с id ${id} был удален`);
+		logger.info(`[AwardService] Значок с id ${id} был удален`);
 		return deletedAward;
 	}
 

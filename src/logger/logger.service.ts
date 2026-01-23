@@ -2,6 +2,7 @@ import { ILoggerService } from './logger.service.interface';
 import { injectable } from 'inversify';
 import 'reflect-metadata';
 import { Logger } from 'tslog';
+import { logger } from './logger';
 
 @injectable()
 export class LoggerService implements ILoggerService {
@@ -16,17 +17,17 @@ export class LoggerService implements ILoggerService {
 		});
 	}
 
-	log(...args: unknown[]): void {
-		this.logger.info(...args);
+	log(msg: string | object): void {
+		logger.info(msg);
 	}
-	warn(...args: string[]): void {
-		this.logger.warn(...args);
+	warn(msg: string | object): void {
+		logger.warn(msg);
 	}
-	error(...args: unknown[]): void {
-		this.logger.error(...args);
+	error(msg: string | object): void {
+		logger.error(msg);
 	}
-	fatal(...args: unknown[]): void {
-		this.logger.fatal(...args);
+	fatal(msg: string | object): void {
+		logger.fatal(msg);
 		process.exit();
 	}
 }

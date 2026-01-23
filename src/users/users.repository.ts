@@ -174,7 +174,6 @@ export class UsersRepository implements IUsersRepository {
 			}
 			return await this.database.client.userModel.delete({ where: { id: emailOrId } });
 		} catch (error) {
-			error instanceof Error && this.logger.error(error.message);
 			return null;
 		}
 	}
@@ -244,9 +243,6 @@ export class UsersRepository implements IUsersRepository {
 			await this.database.client.userModel.deleteMany({ where: { verified: false, createdAt: { lte: date } } });
 			this.logger.log('[ScheduleProccess] Неактивные пользователи удалены из базы данных');
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(`[ScheduleProccess] Не удалось удалить неактивных пользователей. Ошибка: ${error.message}`);
-			}
 			return;
 		}
 	}
@@ -259,11 +255,7 @@ export class UsersRepository implements IUsersRepository {
 			});
 			this.logger.log(`[ScheduleProccess] Из базы данных удалено ${count} заблокированных аккаунтов`);
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(
-					`[ScheduleProccess] Не удалось удалить заблокированных пользователей из базы данных. Ошибка: ${error.message}`
-				);
-			}
+			return;
 		}
 	}
 

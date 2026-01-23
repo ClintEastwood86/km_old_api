@@ -129,7 +129,6 @@ export class CommentsRepository implements ICommentRepository {
 			});
 			return { likes: comment.likes.map((l) => l.id), dislikes: comment.dislikes.map((d) => d.id) };
 		} catch (error) {
-			this.logger.error(`[likeComment] Выпала ошибка при взаимодействии с базой данных ${error}`);
 			return null;
 		}
 	}
@@ -146,7 +145,6 @@ export class CommentsRepository implements ICommentRepository {
 			});
 			return { likes: comment.likes.map((l) => l.id), dislikes: comment.dislikes.map((d) => d.id) };
 		} catch (error) {
-			this.logger.error(`[dislikeComment] Выпала ошибка при взаимодействии с базой данных ${error}`);
 			return null;
 		}
 	}
@@ -163,7 +161,6 @@ export class CommentsRepository implements ICommentRepository {
 			});
 			return { likes: comment.likes.map((l) => l.id), dislikes: comment.dislikes.map((d) => d.id) };
 		} catch (error) {
-			this.logger.error(`[removeLike] Выпала ошибка при взаимодействии с базой данных ${error}`);
 			return null;
 		}
 	}

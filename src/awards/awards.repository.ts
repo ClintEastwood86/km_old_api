@@ -17,9 +17,6 @@ export class AwardsRepository implements IAwardsRepository {
 		try {
 			return await this.database.client.award.create({ data: { name, icon, description, category, condition } });
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return null;
 		}
 	}
@@ -28,9 +25,6 @@ export class AwardsRepository implements IAwardsRepository {
 		try {
 			return await this.database.client.award.update({ where: { id }, data: { name, icon, description, category, condition } });
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return null;
 		}
 	}
@@ -43,9 +37,6 @@ export class AwardsRepository implements IAwardsRepository {
 		try {
 			return await this.database.client.award.findUnique({ where: { id } });
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return null;
 		}
 	}
@@ -66,9 +57,6 @@ export class AwardsRepository implements IAwardsRepository {
 			await this.database.client.userModel.findMany({ where: condition });
 			return true;
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return false;
 		}
 	}
@@ -90,9 +78,6 @@ export class AwardsRepository implements IAwardsRepository {
 				});
 			}
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return;
 		}
 	}
@@ -101,9 +86,6 @@ export class AwardsRepository implements IAwardsRepository {
 		try {
 			return await this.database.client.award.delete({ where: { id } });
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
 			return null;
 		}
 	}
@@ -114,9 +96,7 @@ export class AwardsRepository implements IAwardsRepository {
 				await this.database.client.award.update({ where: { id: award.id }, data: { position: award.position } });
 			}
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(error.message);
-			}
+			return;
 		}
 	}
 }

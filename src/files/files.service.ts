@@ -38,7 +38,7 @@ export class FilesService implements IFilesService {
 		const pathToFile = `${uploadFolder}/${fileNameCrypt}${fileFormat}`;
 
 		await ensureDir(uploadFolder);
-		await writeFile(pathToFile, fileBuffer);
+		await writeFile(pathToFile, fileBuffer as unknown as DataView);
 
 		this.logger.log(`[FilesService] Файл ${fileNameCrypt + fileFormat} записан без ошибок`);
 

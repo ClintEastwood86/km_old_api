@@ -29,6 +29,7 @@ import { IEmailService } from '../email/email.service.interface';
 import { IRanksService } from '../ranks/ranks.service.interface';
 import { GetUsersForAdminPanelDto } from './dto/get-users-for-admin-panel.dto';
 import { cookieConfig } from '../configs/cookie.config';
+import { Logger } from 'pino';
 
 @injectable()
 export class UsersService implements IUsersService {
@@ -42,7 +43,7 @@ export class UsersService implements IUsersService {
 		@inject(TYPES.IEmailService) private emailService: IEmailService
 	) {}
 
-	async createUser({ email, password, login, notification }: UserRegisterDto): Promise<UserModel | HTTPError> {
+	async createUser({ email, password, login, notification }: UserRegisterDto, logger: Logger): Promise<UserModel | HTTPError> {
 		const error = new HTTPError(HttpStatus.UNPROCESSABLE_ENTITY, 'usersRegister', 'Конфликт имён', {
 			error: 'Пользователь с таким email или login уже существует'
 		});
@@ -79,21 +80,21 @@ export class UsersService implements IUsersService {
 				error: 'Ошибка на сервере, пользователь не создан'
 			});
 		}
-		this.logger.log(`[UsersService] Пользователь с email: ${email} успешно зарегистрирован`);
+		logger.info(`[UsersService] Пользователь с email: ${email} успешно зарегистрирован`);
 
 		if (createdUser.confirmToken) {
 			const result = await this.emailService.sendConfirmEmail(createdUser.email, createdUser.login, createdUser.confirmToken);
 			if (result instanceof HTTPError) return result;
 		}
 
-		await this.awardsService.updateOpenAwardsInUser(createdUser.id, AwardCategory.RANKS);
-		await this.awardsService.updateOpenAwardsInUser(createdUser.id, AwardCategory.REGISTER);
-		await this.awardsService.updateOpenAwardsInUser(createdUser.id, AwardCategory.POINTS);
+		await this.awardsService.updateOpenAwardsInUser(createdUser.id, AwardCategory.RANKS, logger);
+		await this.awardsService.updateOpenAwardsInUser(createdUser.id, AwardCategory.REGISTER, logger);
+		await this.awardsService.updateOpenAwardsInUser(createdUser.id, AwardCategory.POINTS, logger);
 
 		return createdUser;
 	}
 
-	async authUser({ email, password }: UserLoginDto): Promise<JwtResponse | HTTPError> {
+	async authUser({ email, password }: UserLoginDto, logger: Logger): Promise<JwtResponse | HTTPError> {
 		const user = await this.checkPassword(email, password);
 		if (user instanceof HTTPError) {
 			return user;
@@ -116,7 +117,7 @@ export class UsersService implements IUsersService {
 			});
 		}
 
-		this.logger.log(`[UsersService] Пользователь с email: ${email} успешно авторизован`);
+		logger.info(`[UsersService] Пользователь с email: ${email} успешно авторизован`);
 
 		return await this.refreshJwt(email);
 	}
@@ -130,7 +131,7 @@ export class UsersService implements IUsersService {
 		return users;
 	}
 
-	async sendBanEmail(userId: number, emailAdmin: string, message: string, login?: string): Promise<void> {
+	async sendBanEmail(userId: number, emailAdmin: string, message: string, logger: Logger, login?: string): Promise<void> {
 		if (Number.isNaN(userId)) {
 			return this.logger.error('[sendBanEmail] Ошибка: 404 Не найден пользователь');
 		}
@@ -143,7 +144,7 @@ export class UsersService implements IUsersService {
 		if (result instanceof Error) {
 			return this.logger.error('[sendBanEmail] Ошибка 500 Не удалось отправить письмо');
 		}
-		this.logger.log(
+		logger.info(
 			`[UsersService] Пользователь ${login || user.login} (${user.login}) был успешно заблокирован администратором с id ${
 				admin.id
 			} (${admin.login})`
@@ -173,14 +174,17 @@ export class UsersService implements IUsersService {
 		}
 	}
 
-	async addPoints(email: string, userId: number, points: number, message: string): Promise<number | HTTPError> {
+	async addPoints(email: string, userId: number, points: number, message: string, logger: Logger): Promise<number | HTTPError> {
 		const user = await this.usersRepository.findFirstUserBy({ id: userId });
 		if (!user) {
 			return new HTTPError(HttpStatus.NOT_FOUND, 'addPoints', 'Не найдено', { error: `Пользователь с id ${userId} не найден` });
 		}
-		const result = await this.ranksService.addPoints({ email: user.email, logName: message, points, useMultiplier: false });
+		const result = await this.ranksService.addPoints(
+			{ email: user.email, logName: message, points, useMultiplier: false },
+			logger
+		);
 		if (typeof result == 'number') {
-			this.logger.log(`[ADMIN | ${email}] Добавлено ${points} очков пользователю ${user.login}`);
+			logger.info(`[ADMIN | ${email}] Добавлено ${points} очков пользователю ${user.login}`);
 		}
 		return result;
 	}
@@ -212,7 +216,7 @@ export class UsersService implements IUsersService {
 		return this.refreshJwt(result.email);
 	}
 
-	async updateAvatar(email: string, file: Express.Multer.File): Promise<FileElementResponse | HTTPError> {
+	async updateAvatar(email: string, file: Express.Multer.File, logger: Logger): Promise<FileElementResponse | HTTPError> {
 		if (file.size > 1_572_864) {
 			return new HTTPError(HttpStatus.PAYLOAD_TOO_LARGE, 'updateAvatar', 'Файл слишком большой', {
 				error: 'Файл не должен превышать размер больше 1.5МБ'
@@ -235,7 +239,7 @@ export class UsersService implements IUsersService {
 			await this.filesService.deleteFile(oldAvatarUrl.avatar);
 		}
 
-		this.logger.log(`[UsersService] Пользователь ${email} успешно сменил аватарку`);
+		logger.info(`[UsersService] Пользователь ${email} успешно сменил аватарку`);
 
 		return fileElementResponse;
 	}
@@ -270,7 +274,7 @@ export class UsersService implements IUsersService {
 		return user;
 	}
 
-	async changeLogin(email: string, value: string): Promise<void | HTTPError> {
+	async changeLogin(email: string, value: string, logger: Logger): Promise<void | HTTPError> {
 		const loginChangePeriod = Number(this.configService.get('LOGIN_CHANGE_PERIOD'));
 		const findUserByCurrentLogin = await this.usersRepository.findUsersBy({
 			login: {
@@ -304,10 +308,10 @@ export class UsersService implements IUsersService {
 			notificationToken: user.notificationToken.replace(user.login, value)
 		});
 
-		this.logger.log(`[UsersService] Пользователь ${email} сменил логин на ${value}`);
+		logger.info(`[UsersService] Пользователь ${email} сменил логин на ${value}`);
 	}
 
-	async changePassword(email: string, value: UserChangePasswordDto): Promise<void | HTTPError> {
+	async changePassword(email: string, value: UserChangePasswordDto, logger: Logger): Promise<void | HTTPError> {
 		const user = await this.checkPassword(email, value.oldPassword);
 		if (user instanceof HTTPError) {
 			return user;
@@ -322,10 +326,10 @@ export class UsersService implements IUsersService {
 		await user.entity.setPassword(value.newPassword, Number(salt));
 
 		await this.usersRepository.updateUser(email, { password: user.entity.password });
-		this.logger.log(`[UsersService] Пользователь ${email} успешно сменил пароль`);
+		logger.info(`[UsersService] Пользователь ${email} успешно сменил пароль`);
 	}
 
-	async changePasswordWithToken(token: string, newPassword: string): Promise<UserModel | HTTPError> {
+	async changePasswordWithToken(token: string, newPassword: string, logger: Logger): Promise<UserModel | HTTPError> {
 		const user = await this.usersRepository.findFirstUserBy({ forgotPasswordToken: token });
 		if (!user) {
 			return new HTTPError(HttpStatus.BAD_REQUEST, 'changePasswordWithToken', 'Неверный токен', {
@@ -355,11 +359,11 @@ export class UsersService implements IUsersService {
 
 		await this.usersRepository.updateUser(user.email, { forgotPasswordToken: null });
 
-		this.logger.log(`[UsersService] Пользователь ${user.email} успешно сменил пароль`);
+		logger.info(`[UsersService] Пользователь ${user.email} успешно сменил пароль`);
 		return updatedUser;
 	}
 
-	async forgotPassword(email: string): Promise<void | HTTPError> {
+	async forgotPassword(email: string, logger: Logger): Promise<void | HTTPError> {
 		const user = await this.usersRepository.findUnique(email);
 		if (!user) {
 			return new HTTPError(HttpStatus.NOT_FOUND, 'forgotPassword', 'Не найден', {
@@ -379,7 +383,7 @@ export class UsersService implements IUsersService {
 		if (sendEmailResult instanceof Error) {
 			return sendEmailResult;
 		}
-		this.logger.log(`[UsersService] Пользователь ${updatedUser.email} запросил смену пароля`);
+		logger.info(`[UsersService] Пользователь ${updatedUser.email} запросил смену пароля`);
 	}
 
 	async refreshJwt(email: string): Promise<JwtResponse> {
@@ -389,7 +393,7 @@ export class UsersService implements IUsersService {
 		};
 	}
 
-	async changeNotification(email: string): Promise<void | HTTPError> {
+	async changeNotification(email: string, logger: Logger): Promise<void | HTTPError> {
 		const user = await this.searchUser(email, {
 			context: 'changeNotification',
 			message: `Пользователь с email ${email} не найден`
@@ -398,10 +402,10 @@ export class UsersService implements IUsersService {
 			return user;
 		}
 		await this.usersRepository.updateUser(email, { notification: !user.notification });
-		this.logger.log(`[UsersService] Пользователь ${user.login} ${user.notification ? 'выключил' : 'включил'} режим уведомления`);
+		logger.info(`[UsersService] Пользователь ${user.login} ${user.notification ? 'выключил' : 'включил'} режим уведомления`);
 	}
 
-	async changeEmail(email: string, newEmail: string): Promise<void | HTTPError> {
+	async changeEmail(email: string, newEmail: string, logger: Logger): Promise<void | HTTPError> {
 		const emailChangePeriod = Number(this.configService.get('EMAIL_CHANGE_PERIOD'));
 		const user = await this.searchUser(email, { context: 'changeEmail' });
 		if (user instanceof Error) {
@@ -436,7 +440,7 @@ export class UsersService implements IUsersService {
 			return sendEmailResult;
 		}
 
-		this.logger.log(`[UsersService] Пользователь ${user.email} запросил смену email с ${email} на ${newEmail}`);
+		logger.info(`[UsersService] Пользователь ${user.email} запросил смену email с ${email} на ${newEmail}`);
 	}
 
 	async deleteAccount({ email, password }: UserLoginDto): Promise<void | HTTPError> {
@@ -547,7 +551,7 @@ export class UsersService implements IUsersService {
 		return await this.usersRepository.getCountCollections(email);
 	}
 
-	async runAuthGuardCheck(accessToken: string, refreshToken: string, res: Response): Promise<void | HTTPError> {
+	async runAuthGuardCheck(accessToken: string, refreshToken: string, res: Response, logger: Logger): Promise<void | HTTPError> {
 		try {
 			const accessTokenPayload = verify(accessToken, this.configService.get('ACCESS_TOKEN_SECRET')) as JwtPayload;
 			const user = await this.findUserByEmail(accessTokenPayload.email);
@@ -562,13 +566,13 @@ export class UsersService implements IUsersService {
 			const refreshTokenPayload = verify(refreshToken, this.configService.get('REFRESH_TOKEN_SECRET')) as JwtPayload;
 			const jwt = await this.refreshJwt(refreshTokenPayload.email);
 			if (this.tokenVerify(refreshTokenPayload.expiries)) {
-				this.logger.log(`[AuthGuard] Access токен пользователя ${accessTokenPayload.email} просрочен. REFRESH`);
+				logger.info(`[AuthGuard] Access токен пользователя ${accessTokenPayload.email} просрочен. REFRESH`);
 				res.cookie('accessToken', jwt.jwtAccess, cookieConfig.access);
 				return;
 			}
 			res.cookie('accessToken', jwt.jwtAccess, cookieConfig.access);
 			res.cookie('refreshToken', jwt.jwtRefresh, cookieConfig.refresh);
-			this.logger.log(`[AuthGuard] Оба токена пользователя ${refreshTokenPayload.email} просрочены REFRESH`);
+			logger.info(`[AuthGuard] Оба токена пользователя ${refreshTokenPayload.email} просрочены REFRESH`);
 		} catch (error) {
 			return new HTTPError(HttpStatus.UNAUTHORIZED, 'authGuard', 'Не авторизован', {
 				error: 'Не прошел авторизацию'

@@ -83,8 +83,8 @@ export class AwardsController extends BaseController {
 		]);
 	}
 
-	async createAward({ body }: Request<{}, {}, AwardCreateDto>, res: Response, next: NextFunction): Promise<void> {
-		const awardOrError = await this.awardsService.create(body);
+	async createAward({ body, log }: Request<{}, {}, AwardCreateDto>, res: Response, next: NextFunction): Promise<void> {
+		const awardOrError = await this.awardsService.create(body, log);
 		if (awardOrError instanceof Error) {
 			return next(awardOrError);
 		}
@@ -115,7 +115,7 @@ export class AwardsController extends BaseController {
 		this.ok(res, award);
 	}
 
-	async deleteById({ params }: Request, res: Response, next: NextFunction): Promise<void> {
+	async deleteById({ params, log }: Request, res: Response, next: NextFunction): Promise<void> {
 		const id = Number(params.id);
 		if (Number.isNaN(id)) {
 			return next(
@@ -124,7 +124,7 @@ export class AwardsController extends BaseController {
 				})
 			);
 		}
-		const award = await this.awardsService.deleteById(Math.floor(id));
+		const award = await this.awardsService.deleteById(Math.floor(id), log);
 		if (award instanceof Error) {
 			return next(award);
 		}

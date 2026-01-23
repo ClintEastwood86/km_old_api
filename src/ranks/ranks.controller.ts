@@ -59,8 +59,8 @@ export class RanksController extends BaseController {
 		]);
 	}
 
-	async createRank({ body }: Request<{}, {}, RankCreateDto>, res: Response, next: NextFunction): Promise<void> {
-		const rank = await this.ranksService.create(body);
+	async createRank({ body, log }: Request<{}, {}, RankCreateDto>, res: Response, next: NextFunction): Promise<void> {
+		const rank = await this.ranksService.create(body, log);
 		if (rank instanceof Error) {
 			return next(rank);
 		}
@@ -68,7 +68,7 @@ export class RanksController extends BaseController {
 	}
 
 	async updateRank(
-		{ body, params }: Request<Record<string, string>, {}, RankCreateDto>,
+		{ body, params, log }: Request<Record<string, string>, {}, RankCreateDto>,
 		res: Response,
 		next: NextFunction
 	): Promise<void> {
@@ -80,7 +80,7 @@ export class RanksController extends BaseController {
 				})
 			);
 		}
-		const rank = await this.ranksService.update(Math.floor(id), body);
+		const rank = await this.ranksService.update(Math.floor(id), body, log);
 		if (rank instanceof Error) {
 			return next(rank);
 		}

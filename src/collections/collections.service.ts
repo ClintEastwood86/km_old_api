@@ -14,6 +14,7 @@ import { CollectionCategory } from '../enums/collection.enum';
 import { AttachedMoviesInCollection, ReturnTypeActionCollection } from './collections.types';
 import { CollectionActions } from '../enums/action.enum';
 import { IMoviesRepository } from '../movies/movies.repository.interface';
+import { Logger } from 'pino';
 
 @injectable()
 export class CollectionsService implements ICollectionsService {
@@ -29,7 +30,7 @@ export class CollectionsService implements ICollectionsService {
 		return await this.collectionsRepository.get(email, take, skip);
 	}
 
-	async create(dto: CreateCollectionDto, email: string): Promise<Collection | HTTPError> {
+	async create(dto: CreateCollectionDto, email: string, logger: Logger): Promise<Collection | HTTPError> {
 		const countCollections = await this.usersService.getCountCollections(email);
 		const LIMIT_COLLECTIONS_IN_ACCOUNT = Number(this.configService.get('LIMIT_COLLECTIONS_IN_ACCOUNT'));
 		if (countCollections >= LIMIT_COLLECTIONS_IN_ACCOUNT) {
@@ -43,7 +44,7 @@ export class CollectionsService implements ICollectionsService {
 				error: 'Не удалось создать подборку, повторите позже'
 			});
 		}
-		this.logger.log(`[CollectionsService] Создана подборка ${collection.name}`);
+		logger.info(`Создана подборка ${collection.name}`);
 		return collection;
 	}
 

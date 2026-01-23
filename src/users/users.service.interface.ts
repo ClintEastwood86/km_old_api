@@ -8,23 +8,24 @@ import { UserRegisterDto } from './dto/user-register.dto';
 import { AttachedMoviesInCollection } from '../collections/collections.types';
 import { GetUsersForAdminPanelDto } from './dto/get-users-for-admin-panel.dto';
 import { Response } from 'express';
+import { Logger } from 'pino';
 
 export interface IUsersService {
-	createUser(dto: UserRegisterDto): Promise<UserModel | HTTPError>;
-	authUser(dto: UserLoginDto): Promise<JwtResponse | HTTPError>;
+	createUser(dto: UserRegisterDto, logger: Logger): Promise<UserModel | HTTPError>;
+	authUser(dto: UserLoginDto, logger: Logger): Promise<JwtResponse | HTTPError>;
 	confirmUserAccount(token: string): Promise<HTTPError | JwtResponse>;
-	updateAvatar(email: string, file: Express.Multer.File): Promise<FileElementResponse | HTTPError>;
+	updateAvatar(email: string, file: Express.Multer.File, logger: Logger): Promise<FileElementResponse | HTTPError>;
 	findUserByEmail(email: string): Promise<UserModel | null>;
 	findUserById(userId: number): Promise<UserModel | null>;
 	refreshJwt(email: string): Promise<JwtResponse>;
 	findUserByJwt(token: string): Promise<ReturnTypeUserWithIcon | HTTPError>;
-	changeLogin(email: string, value: string): Promise<void | HTTPError>;
+	changeLogin(email: string, value: string, logger: Logger): Promise<void | HTTPError>;
 	stateBlockUser(id: number, action: 'block' | 'unblock'): Promise<(UserModel & { oldLogin?: string }) | UserModel | HTTPError>;
-	changePassword(email: string, value: UserChangePasswordDto): Promise<void | HTTPError>;
-	forgotPassword(email: string): Promise<void | HTTPError>;
-	changePasswordWithToken(token: string, newPassword: string): Promise<UserModel | HTTPError>;
-	changeNotification(email: string): Promise<void | HTTPError>;
-	changeEmail(email: string, newEmail: string): Promise<void | HTTPError>;
+	changePassword(email: string, value: UserChangePasswordDto, logger: Logger): Promise<void | HTTPError>;
+	forgotPassword(email: string, logger: Logger): Promise<void | HTTPError>;
+	changePasswordWithToken(token: string, newPassword: string, logger: Logger): Promise<UserModel | HTTPError>;
+	changeNotification(email: string, logger: Logger): Promise<void | HTTPError>;
+	changeEmail(email: string, newEmail: string, logger: Logger): Promise<void | HTTPError>;
 	deleteAccount(dto: UserLoginDto): Promise<void | HTTPError>;
 	changeSelectedAward(email: string, awardId: number): Promise<void | HTTPError>;
 	getIdOpenAwards(email: string): Promise<number[] | HTTPError>;
@@ -37,9 +38,9 @@ export interface IUsersService {
 	offNotificationByToken(token: string): Promise<void | Error>;
 	getCountCollections(email: string): Promise<number>;
 	setViewToken(email: string, token: string): Promise<string | null>;
-	addPoints(email: string, userId: number, points: number, message: string): Promise<number | HTTPError>;
-	sendBanEmail(userId: number, emailAdmin: string, message: string, login?: string): Promise<void>;
-	runAuthGuardCheck(accessToken: string, refreshToken: string, res: Response): Promise<void | HTTPError>;
+	addPoints(email: string, userId: number, points: number, message: string, logger: Logger): Promise<number | HTTPError>;
+	sendBanEmail(userId: number, emailAdmin: string, message: string, logger: Logger, login?: string): Promise<void>;
+	runAuthGuardCheck(accessToken: string, refreshToken: string, res: Response, logger: Logger): Promise<void | HTTPError>;
 	tokenVerify(expiries: number): boolean;
 	addViewTime(email: string, minutes: number): Promise<number>;
 }

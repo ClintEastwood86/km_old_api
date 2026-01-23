@@ -17,7 +17,6 @@ export class BonusRepository implements IBonusRepository {
 		try {
 			return await this.database.client.bonus.create({ data: { expiries, multiplier, userModelId: userId, adminId } });
 		} catch (error) {
-			error instanceof Error && this.logger.error(error.message);
 			return null;
 		}
 	}

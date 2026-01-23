@@ -24,9 +24,6 @@ export class CollectionsRepository implements ICollectionsRepository {
 				include: { _count: { select: { dislikes: true, likes: true, followers: true } } }
 			});
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(`[CollectionsRepository] Ошибка при создании подборки ${error.message}`);
-			}
 			return null;
 		}
 	}
@@ -68,9 +65,6 @@ export class CollectionsRepository implements ICollectionsRepository {
 				await this.database.client.collection.findMany({ where: { private: { equals: false } }, select: { id: true } })
 			).map((obj) => obj.id);
 		} catch (error) {
-			if (error instanceof Error) {
-				this.logger.error(`[CollectionsRepository] Ошибка при получении путей. ${error.message}`);
-			}
 			return [];
 		}
 	}

@@ -3,6 +3,7 @@ import { HTTPError } from '../errors/http-error';
 import { Prisma } from '@prisma/client';
 import { PointsItemCategory } from '../pointsItems/pointsItem.enum';
 import { RankCreateDto } from './dto/rank-create.dto';
+import { Logger } from 'pino';
 
 export interface AddPointsWithTemplate {
 	email: string;
@@ -18,10 +19,10 @@ export interface AddPointsWithoutTemplate {
 }
 
 export interface IRanksService {
-	create(dto: RankCreateDto): Promise<Rank | HTTPError>;
-	update(id: number, dto: RankCreateDto): Promise<Rank | HTTPError>;
-	addPoints(options: AddPointsWithoutTemplate): Promise<number | HTTPError>;
-	addPoints(options: AddPointsWithTemplate): Promise<number | HTTPError>;
+	create(dto: RankCreateDto, logger: Logger): Promise<Rank | HTTPError>;
+	update(id: number, dto: RankCreateDto, logger: Logger): Promise<Rank | HTTPError>;
+	addPoints(options: AddPointsWithoutTemplate, logger?: Logger): Promise<number | HTTPError>;
+	addPoints(options: AddPointsWithTemplate, logger?: Logger): Promise<number | HTTPError>;
 	getRank(id: number): Promise<Rank | HTTPError>;
 	addPointsToSubscribedUsers(): Promise<void>;
 	getAllRanks(): Promise<Rank[] | HTTPError>;

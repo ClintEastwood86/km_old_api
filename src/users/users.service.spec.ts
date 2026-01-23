@@ -12,6 +12,7 @@ import { UserRegisterDto } from './dto/user-register.dto';
 import { UserModel } from '@prisma/client';
 import { HTTPError } from '../errors/http-error';
 import { randomUUID } from 'crypto';
+import { logger } from '../logger/logger';
 
 const loggerServiceMock: ILoggerService = {
 	log: jest.fn(),
@@ -118,7 +119,7 @@ describe('Users Service', () => {
 			return returnUserModelByDto(user);
 		});
 
-		const result = await usersService.createUser(dto);
+		const result = await usersService.createUser(dto, logger);
 		expect(result).not.toBeInstanceOf(HTTPError);
 		expect((result as UserModel).password).not.toBe(dto.password);
 	});
@@ -128,7 +129,7 @@ describe('Users Service', () => {
 			return returnUserModelByDto(dto);
 		});
 
-		const result = await usersService.createUser(dto);
+		const result = await usersService.createUser(dto, logger);
 		expect(result).toBeInstanceOf(HTTPError);
 	});
 });

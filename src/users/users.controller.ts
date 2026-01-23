@@ -185,8 +185,8 @@ export class UsersController extends BaseController {
 		]);
 	}
 
-	async login({ body }: Request<{}, {}, UserLoginDto>, res: Response, next: NextFunction): Promise<void> {
-		const result = await this.usersService.authUser(body);
+	async login({ body, log }: Request<{}, {}, UserLoginDto>, res: Response, next: NextFunction): Promise<void> {
+		const result = await this.usersService.authUser(body, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -194,8 +194,8 @@ export class UsersController extends BaseController {
 		this.ok(res, { accessToken: result.jwtAccess });
 	}
 
-	async register({ body }: Request<{}, {}, UserRegisterDto>, res: Response, next: NextFunction): Promise<void> {
-		const result = await this.usersService.createUser(body);
+	async register({ body, log }: Request<{}, {}, UserRegisterDto>, res: Response, next: NextFunction): Promise<void> {
+		const result = await this.usersService.createUser(body, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -237,23 +237,23 @@ export class UsersController extends BaseController {
 				})
 			);
 		}
-		const result = await this.usersService.updateAvatar(req.user, req.file);
+		const result = await this.usersService.updateAvatar(req.user, req.file, req.log);
 		if (result instanceof Error) {
 			return next(result);
 		}
 		this.ok(res, result);
 	}
 
-	async addPoints({ body, user }: Request<{}, {}, AddPointsDto>, res: Response, next: NextFunction): Promise<void> {
-		const resultPoints = await this.usersService.addPoints(user, body.userId, body.points, body.message);
+	async addPoints({ body, user, log }: Request<{}, {}, AddPointsDto>, res: Response, next: NextFunction): Promise<void> {
+		const resultPoints = await this.usersService.addPoints(user, body.userId, body.points, body.message, log);
 		if (resultPoints instanceof Error) {
 			return next(resultPoints);
 		}
 		this.ok(res, resultPoints);
 	}
 
-	async changeLogin({ body, user }: Request<{}, {}, UserChangeLoginDto>, res: Response, next: NextFunction): Promise<void> {
-		const result = await this.usersService.changeLogin(user, body.login);
+	async changeLogin({ body, user, log }: Request<{}, {}, UserChangeLoginDto>, res: Response, next: NextFunction): Promise<void> {
+		const result = await this.usersService.changeLogin(user, body.login, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -262,8 +262,12 @@ export class UsersController extends BaseController {
 		});
 	}
 
-	async changePassword({ body, user }: Request<{}, {}, UserChangePasswordDto>, res: Response, next: NextFunction): Promise<void> {
-		const result = await this.usersService.changePassword(user, body);
+	async changePassword(
+		{ body, user, log }: Request<{}, {}, UserChangePasswordDto>,
+		res: Response,
+		next: NextFunction
+	): Promise<void> {
+		const result = await this.usersService.changePassword(user, body, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -273,19 +277,19 @@ export class UsersController extends BaseController {
 	}
 
 	async changePasswordWithToken(
-		{ body }: Request<{}, {}, UserChangePasswordWithTokenDto>,
+		{ body, log }: Request<{}, {}, UserChangePasswordWithTokenDto>,
 		res: Response,
 		next: NextFunction
 	): Promise<void> {
-		const result = await this.usersService.changePasswordWithToken(body.token, body.password);
+		const result = await this.usersService.changePasswordWithToken(body.token, body.password, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
 		this.ok(res, result);
 	}
 
-	async forgotPassword({ body }: Request<{}, {}, UserForgotPasswordDto>, res: Response, next: NextFunction): Promise<void> {
-		const result = await this.usersService.forgotPassword(body.email);
+	async forgotPassword({ body, log }: Request<{}, {}, UserForgotPasswordDto>, res: Response, next: NextFunction): Promise<void> {
+		const result = await this.usersService.forgotPassword(body.email, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -298,8 +302,8 @@ export class UsersController extends BaseController {
 		this.ok(res, await this.usersService.getUsersForAdminPanel(body, user));
 	}
 
-	async changeNotification(req: Request, res: Response, next: NextFunction): Promise<void> {
-		const result = await this.usersService.changeNotification(req.user);
+	async changeNotification({ user, log }: Request, res: Response, next: NextFunction): Promise<void> {
+		const result = await this.usersService.changeNotification(user, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -308,7 +312,7 @@ export class UsersController extends BaseController {
 		});
 	}
 
-	async changeEmail({ user, body }: Request<{}, {}, UserChangeEmailDto>, res: Response, next: NextFunction): Promise<void> {
+	async changeEmail({ user, body, log }: Request<{}, {}, UserChangeEmailDto>, res: Response, next: NextFunction): Promise<void> {
 		if (user == body.email) {
 			return next(
 				new HTTPError(HttpStatus.FORBIDDEN, 'changeEmail', 'Одинаковые email', {
@@ -316,7 +320,7 @@ export class UsersController extends BaseController {
 				})
 			);
 		}
-		const result = await this.usersService.changeEmail(user, body.email);
+		const result = await this.usersService.changeEmail(user, body.email, log);
 		if (result instanceof Error) {
 			return next(result);
 		}
@@ -329,7 +333,7 @@ export class UsersController extends BaseController {
 	}
 
 	async blockAccount(
-		{ body, params, user }: Request<Record<string, string>, {}, UserBlockDto>,
+		{ body, params, user, log }: Request<Record<string, string>, {}, UserBlockDto>,
 		res: Response,
 		next: NextFunction
 	): Promise<void> {
@@ -337,7 +341,7 @@ export class UsersController extends BaseController {
 		if (result instanceof Error) {
 			return next(result);
 		}
-		await this.usersService.sendBanEmail(Number(params.id), user, body.message, 'oldLogin' in result ? result.oldLogin : '');
+		await this.usersService.sendBanEmail(Number(params.id), user, body.message, log, 'oldLogin' in result ? result.oldLogin : '');
 		this.ok(res, result);
 	}
 

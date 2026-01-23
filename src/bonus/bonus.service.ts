@@ -8,6 +8,7 @@ import { IUsersService } from '../users/users.service.interface';
 import { HttpStatus } from '../helpers/http-status';
 import { IBonusRepository } from './bonus.repository.interface';
 import { ILoggerService } from '../logger/logger.service.interface';
+import { Logger } from 'pino';
 
 @injectable()
 export class BonusService implements IBonusService {
@@ -17,7 +18,7 @@ export class BonusService implements IBonusService {
 		@inject(TYPES.IBonusRepository) private bonusRepository: IBonusRepository
 	) {}
 
-	async create(dto: BonusCreateDto, email: string): Promise<Bonus | HTTPError> {
+	async create(dto: BonusCreateDto, email: string, logger: Logger): Promise<Bonus | HTTPError> {
 		const admin = await this.usersService.findUserByEmail(email);
 		const user = await this.usersService.findUserById(dto.userId);
 		if (!admin) {
@@ -43,9 +44,7 @@ export class BonusService implements IBonusService {
 				error: 'Произошла ошибка на сервере. Попробуйте позже'
 			});
 		}
-		this.logger.log(
-			`[BonusService] Пользователь ${user.login} получил бонус ${bonus.multiplier}X действующий до ${date.toJSON()}`
-		);
+		logger.info(`Пользователь ${user.login} получил бонус ${bonus.multiplier}X действующий до ${date.toJSON()}`);
 		return bonus;
 	}
 

@@ -105,8 +105,12 @@ export class CollectionsController extends BaseController {
 		]);
 	}
 
-	async createCollection(req: Request<{}, {}, CreateCollectionDto>, res: Response, next: NextFunction): Promise<void> {
-		const collection = await this.collectionService.create(req.body, req.user);
+	async createCollection(
+		{ body, user, log }: Request<{}, {}, CreateCollectionDto>,
+		res: Response,
+		next: NextFunction
+	): Promise<void> {
+		const collection = await this.collectionService.create(body, user, log);
 		if (collection instanceof Error) {
 			return next(collection);
 		}

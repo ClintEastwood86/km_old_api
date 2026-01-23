@@ -1,6 +1,6 @@
 export interface ILoggerService {
-	log(...args: unknown[]): void;
-	warn(...args: unknown[]): void;
-	error(...args: unknown[]): void;
-	fatal(...args: unknown[]): void;
+	log(msg: string | object): void;
+	warn(msg: string | object): void;
+	error(msg: string | object): void;
+	fatal(msg: string | object): void;
 }

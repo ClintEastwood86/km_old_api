@@ -10,6 +10,6 @@ export class AuthGuard extends BaseMiddleware {
 	}
 
 	async execute(req: Request, res: Response, next: NextFunction): Promise<void> {
-		next(await this.usersService.runAuthGuardCheck(req.cookies.accessToken, req.cookies.refreshToken, res));
+		next(await this.usersService.runAuthGuardCheck(req.cookies.accessToken, req.cookies.refreshToken, res, req.log));
 	}
 }

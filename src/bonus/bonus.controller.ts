@@ -57,8 +57,8 @@ export class BonusController extends BaseController {
 		]);
 	}
 
-	async createBonus({ body, user }: Request<{}, {}, BonusCreateDto>, res: Response, next: NextFunction): Promise<void> {
-		const bonus = await this.bonusService.create(body, user);
+	async createBonus({ body, user, log }: Request<{}, {}, BonusCreateDto>, res: Response, next: NextFunction): Promise<void> {
+		const bonus = await this.bonusService.create(body, user, log);
 		if (bonus instanceof Error) {
 			return next(bonus);
 		}

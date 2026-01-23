@@ -17,6 +17,7 @@ import { PointsItemCategory } from '../pointsItems/pointsItem.enum';
 import { IUsersRepository } from '../users/users.repository.interface';
 import { AttachedAliasInComment } from './comments.types';
 import { UserRole } from '../enums/role.enum';
+import { Logger } from 'pino';
 
 @injectable()
 export class CommentsService implements ICommentsService {
@@ -67,7 +68,7 @@ export class CommentsService implements ICommentsService {
 		return createdComment;
 	}
 
-	async publishComment(id: number): Promise<Comment | HTTPError> {
+	async publishComment(id: number, logger: Logger): Promise<Comment | HTTPError> {
 		const comment = await this.commentsRepository.publish(id);
 		if (!comment) {
 			return new HTTPError(HttpStatus.BAD_REQUEST, 'publishComment', 'Передан неверный id', {
@@ -78,16 +79,19 @@ export class CommentsService implements ICommentsService {
 		if (!lastCommentInUser || (lastCommentInUser && lastCommentInUser.getDate() !== new Date().getDate())) {
 			const user = await this.usersRepository.findUserAndSelect('email', { id: comment.userId });
 			if (!user) return comment;
-			await this.ranksService.addPoints({
-				category: PointsItemCategory.Comment,
-				useMultiplier: true,
-				email: user.email
-			});
+			await this.ranksService.addPoints(
+				{
+					category: PointsItemCategory.Comment,
+					useMultiplier: true,
+					email: user.email
+				},
+				logger
+			);
 		}
 		return comment;
 	}
 
-	async rejectComment(id: number, cause: string, email: string): Promise<Comment | HTTPError> {
+	async rejectComment(id: number, cause: string, email: string, logger: Logger): Promise<Comment | HTTPError> {
 		const notFoundCommentError = new HTTPError(HttpStatus.BAD_REQUEST, 'rejectComment', 'Передан неверный id', {
 			error: `Комментарий с id ${id} не найден`
 		});
@@ -115,7 +119,7 @@ export class CommentsService implements ICommentsService {
 		if (!comment) {
 			return notFoundCommentError;
 		}
-		this.logger.log(`[${email}] Комментарий с id ${id} был удален по причине: ${cause}`);
+		logger.info(`[${email}] Комментарий с id ${id} был удален по причине: ${cause}`);
 		return comment;
 	}
 
