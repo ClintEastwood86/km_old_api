@@ -5,6 +5,7 @@ import 'reflect-metadata';
 import { TYPES } from '../types';
 import { ILoggerService } from '../logger/logger.service.interface';
 import { onPrismaError, onPrismaWarn, onSlowPrismaQuery } from './database.handlers';
+import { prismaQueryDuration } from '../common/metrics';
 
 @injectable()
 export class CommonDatabase implements IDatabaseService<PrismaClient> {
@@ -27,7 +28,20 @@ export class CommonDatabase implements IDatabaseService<PrismaClient> {
 			}
 		});
 
-		this.client = client;
+		this.client = client.$extends({
+			query: {
+				$allModels: {
+					async $allOperations({ args, query }) {
+						const end = prismaQueryDuration.startTimer();
+						try {
+							return await query(args);
+						} finally {
+							end();
+						}
+					}
+				}
+			}
+		}) as PrismaClient;
 	}
 
 	async connect(): Promise<void> {

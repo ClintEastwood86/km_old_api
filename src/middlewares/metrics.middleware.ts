@@ -4,12 +4,15 @@ import { httpRequestsTotal, httpRequestDuration } from '../common/metrics';
 
 export class MetricsMiddleware extends BaseMiddleware {
 	execute(req: Request, res: Response, next: NextFunction): void {
+		if (req.route?.path === '/metrics' || req.route?.path === '/healthz') {
+			return next();
+		}
 		const start = Date.now();
 
 		res.on('finish', () => {
 			const duration = Date.now() - start;
 
-			const route = req.route?.path ?? req.originalUrl.split('?')[0] ?? 'unknown';
+			const route = req.route?.path ?? 'unknown';
 
 			httpRequestsTotal.inc({
 				method: req.method,
