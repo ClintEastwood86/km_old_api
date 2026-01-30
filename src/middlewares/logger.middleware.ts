@@ -2,12 +2,18 @@ import { pinoHttp } from 'pino-http';
 import { logger } from '../logger/logger';
 import { randomUUID } from 'crypto';
 
+const IGNORE_PATTERNS = ['/upload/', '/ready', '/healthz'];
+
 export const loggerMiddleware = pinoHttp({
 	logger,
 	genReqId: () => randomUUID(),
 	autoLogging: {
 		ignore: (req) => {
-			return req.url ? req.url.startsWith('/upload/') : false;
+			const url = req.url;
+			if (!url) {
+				return false;
+			}
+			return IGNORE_PATTERNS.some((value) => url.startsWith(value));
 		}
 	},
 	customLogLevel: (_, res, err) => {
