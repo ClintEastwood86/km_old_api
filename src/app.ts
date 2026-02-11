@@ -29,6 +29,7 @@ import { AppController } from './app.controller';
 import { setupExpressErrorHandler } from '@sentry/node';
 import { sentryMiddleware } from './middlewares/sentry.middleware';
 import { MetricsMiddleware } from './middlewares/metrics.middleware';
+import { IMoviesService } from './movies/movies.service.interface';
 
 @injectable()
 export class App {
@@ -47,6 +48,7 @@ export class App {
 		@inject(TYPES.PointsItemController) private pointsItemController: PointsItemController,
 		@inject(TYPES.IExeptionFilter) private exeptionFilter: IExeptionFilter,
 		@inject(TYPES.CommonDatabase) private commonDatabase: CommonDatabase,
+		@inject(TYPES.IMoviesService) private moviesService: IMoviesService,
 		@inject(TYPES.MoviesDatabase) private moviesDatabase: MoviesDatabase,
 		@inject(TYPES.AwardsController) private awardsController: AwardsController,
 		@inject(TYPES.MoviesController) private moviesController: MoviesController,
@@ -72,6 +74,7 @@ export class App {
 			'addPointsToSubscribedUsers',
 			this.ranksService.addPointsToSubscribedUsers.bind(this.ranksService)
 		);
+		this.scheduleService.everyHour('updatePlayersData', this.moviesService.updatePlayersData.bind(this.moviesService));
 	}
 
 	private useMiddlewares(): void {

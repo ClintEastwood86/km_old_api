@@ -1,12 +1,13 @@
-import { HistoryItem } from '@prisma/client';
+import { HistoryItem, Player } from '@prisma/client';
 import { Country, Genre, Movie } from '../../prisma/generated/movies';
 import { MoviesSearchDto } from './dto/movies-search.dto';
 import { MovieMoreInfo } from './movies.entity.interface';
 import { SortMoviesEnumId } from '../enums/sort.enum';
 
 export interface IMoviesRepository {
+	getPlayers(): Promise<Player[]>;
 	findPaths(): Promise<string[]>;
-	findMovieByAlias(alias: string): Promise<MovieMoreInfo | null>;
+	findMovieByAlias(alias: string): Promise<Omit<MovieMoreInfo, 'players'> | null>;
 	findAllGenres(): Promise<Genre[]>;
 	findAllCountries(): Promise<Country[]>;
 	findMovieById(id: number): Promise<Movie | null>;

@@ -24,4 +24,11 @@ export class ScheduleService implements IScheduleService {
 		this.logger.log(`[ScheduleService] Запланирован новый процесс – ${job.name} [ED]`);
 		return job.name;
 	}
+
+	everyHour(name: string, cb: (...args: any[]) => any): string {
+		const job = scheduleJob(name, '0 0 * * * *', () => cb());
+		this.jobs.push(job);
+		this.logger.log(`[ScheduleService] Запланирован новый процесс – ${job.name} [EH]`);
+		return job.name;
+	}
 }

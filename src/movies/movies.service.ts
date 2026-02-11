@@ -10,10 +10,12 @@ import { MoviesSearchDto } from './dto/movies-search.dto';
 import { SortMoviesEnumId } from '../enums/sort.enum';
 import { IUsersService } from '../users/users.service.interface';
 import { IUsersRepository } from '../users/users.repository.interface';
-import { HistoryItem } from '@prisma/client';
+import { HistoryItem, Player } from '@prisma/client';
 
 @injectable()
 export class MoviesService implements IMoviesService {
+	private players: Player[] = [];
+
 	constructor(
 		@inject(TYPES.IMoviesRepository) private moviesRepository: IMoviesRepository,
 		@inject(TYPES.IUsersService) private usersService: IUsersService,
@@ -29,7 +31,11 @@ export class MoviesService implements IMoviesService {
 		if (!movie) {
 			return new HTTPError(HttpStatus.NOT_FOUND, 'getMovieByAlias', 'Не найдено', { error: `Фильм с alias ${alias} не найден` });
 		}
-		return movie;
+		if (!this.players.length) {
+			await this.updatePlayersData();
+		}
+
+		return { ...movie, players: this.players };
 	}
 
 	async getMovieById(id: number): Promise<Movie | null> {
@@ -91,5 +97,11 @@ export class MoviesService implements IMoviesService {
 
 	async getLastHistoryRecord(email: string): Promise<HistoryItem | null> {
 		return this.moviesRepository.getLastHistoryRecord(email);
+	}
+
+	async updatePlayersData(): Promise<Player[]> {
+		const players = await this.moviesRepository.getPlayers();
+		this.players = players;
+		return players;
 	}
 }

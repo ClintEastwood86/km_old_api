@@ -170,6 +170,19 @@ model LeaderboardUserSnapshot {
     @@unique([year, userId])
 }
 
+model Player {
+    key   PlayerKey @id
+    name  String
+    order Int
+}
+
+enum PlayerKey {
+    VEOVEO
+    ALLOHA
+    COLLAPS
+    TURBO
+}
+
 enum StatusComment {
     REJECTED
     DRAFT

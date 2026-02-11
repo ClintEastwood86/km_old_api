@@ -9,7 +9,7 @@ import { SortMoviesEnumId, movieSorting } from '../enums/sort.enum';
 import { ILoggerService } from '../logger/logger.service.interface';
 import { moviesSelectConfig } from '../configs/movies-select.config';
 import { CommonDatabase } from '../database/common.database';
-import { HistoryItem } from '@prisma/client';
+import { HistoryItem, Player } from '@prisma/client';
 
 @injectable()
 export class MoviesRepository implements IMoviesRepository {
@@ -39,7 +39,11 @@ export class MoviesRepository implements IMoviesRepository {
 		return (await this.database.client.movie.findMany({ select: { alias: true } })).map((a) => a.alias);
 	}
 
-	async findMovieByAlias(alias: string): Promise<MovieMoreInfo | null> {
+	async getPlayers(): Promise<Player[]> {
+		return this.commonDatabase.client.player.findMany();
+	}
+
+	async findMovieByAlias(alias: string): Promise<Omit<MovieMoreInfo, 'players'> | null> {
 		try {
 			const movie = await this.database.client.movie.findUnique({
 				where: { alias, isHidden: false },

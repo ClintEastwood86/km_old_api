@@ -1,4 +1,4 @@
-import { HistoryItem } from '@prisma/client';
+import { HistoryItem, Player } from '@prisma/client';
 import { Country, Genre, Movie } from '../../prisma/generated/movies';
 import { HTTPError } from '../errors/http-error';
 import { MoviesSearchDto } from './dto/movies-search.dto';
@@ -19,4 +19,5 @@ export interface IMoviesService {
 	getMoviesByArrayId(array: number[], take: number, skip: number, sort?: SortMoviesEnumId): Promise<MovieShort[]>;
 	addHistoryRecord(email: string, token: string, movieId: number): Promise<HistoryItem>;
 	getLastHistoryRecord(email: string): Promise<HistoryItem | null>;
+	updatePlayersData(): Promise<Player[]>;
 }
