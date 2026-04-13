@@ -30,6 +30,7 @@ import { setupExpressErrorHandler } from '@sentry/node';
 import { sentryMiddleware } from './middlewares/sentry.middleware';
 import { MetricsMiddleware } from './middlewares/metrics.middleware';
 import { IMoviesService } from './movies/movies.service.interface';
+import { ICacheService } from './cache/cache.service.interface';
 
 @injectable()
 export class App {
@@ -42,6 +43,7 @@ export class App {
 
 	constructor(
 		@inject(TYPES.ILoggerService) private logger: ILoggerService,
+		@inject(TYPES.CacheService) private cache: ICacheService,
 		@inject(TYPES.AppController) private appController: AppController,
 		@inject(TYPES.UserController) private usersController: UsersController,
 		@inject(TYPES.RanksController) private ranksController: RanksController,
@@ -111,6 +113,7 @@ export class App {
 	async init(): Promise<void> {
 		await this.commonDatabase.connect();
 		await this.moviesDatabase.connect();
+		await this.cache.connect();
 
 		this.useMiddlewares();
 		this.useRoutes();

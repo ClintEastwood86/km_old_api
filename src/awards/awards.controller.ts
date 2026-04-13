@@ -16,6 +16,7 @@ import { HTTPError } from '../errors/http-error';
 import { HttpStatus } from '../helpers/http-status';
 import { Role } from '@prisma/client';
 import { UpdatePositionsDto } from './dto/update-positions.dto';
+import { ICacheService } from '../cache/cache.service.interface';
 
 @injectable()
 export class AwardsController extends BaseController {
@@ -23,7 +24,8 @@ export class AwardsController extends BaseController {
 		@inject(TYPES.ILoggerService) private logger: ILoggerService,
 		@inject(TYPES.IConfigService) private config: IConfigService,
 		@inject(TYPES.IUsersService) private usersService: IUsersService,
-		@inject(TYPES.IAwardsService) private awardsService: IAwardsService
+		@inject(TYPES.IAwardsService) private awardsService: IAwardsService,
+		@inject(TYPES.CacheService) private cache: ICacheService
 	) {
 		super(logger);
 		this.bindRoutes('awards', [
@@ -92,10 +94,18 @@ export class AwardsController extends BaseController {
 	}
 
 	async get(req: Request, res: Response, next: NextFunction): Promise<void> {
+		const cacheKey = `awards:all`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const result = await this.awardsService.getAllAwards();
 		if (result instanceof Error) {
 			return next(result);
 		}
+		this.cache.set(cacheKey, result, 1000 * 60).catch(() => null);
 		this.ok(res, result);
 	}
 
@@ -108,10 +118,18 @@ export class AwardsController extends BaseController {
 				})
 			);
 		}
+		const cacheKey = `awards:${id}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const award = await this.awardsService.getById(Math.floor(id));
 		if (award instanceof Error) {
 			return next(award);
 		}
+		this.cache.set(cacheKey, award, 1000 * 60).catch(() => null);
 		this.ok(res, award);
 	}
 

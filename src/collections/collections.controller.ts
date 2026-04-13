@@ -16,6 +16,9 @@ import { setDefaultQuery } from '../helpers/set-default-query';
 import { CollectionCategory } from '../enums/collection.enum';
 import { SetMoviesDto } from './dto/set-movies-dto';
 import { FindCollectionsDto } from './dto/find-collections.dto';
+import { ICacheService } from '../cache/cache.service.interface';
+import { objectToSearchParams } from '../helpers/object-to-params';
+import { Collection } from '@prisma/client';
 
 @injectable()
 export class CollectionsController extends BaseController {
@@ -23,7 +26,8 @@ export class CollectionsController extends BaseController {
 		@inject(TYPES.ILoggerService) private logger: ILoggerService,
 		@inject(TYPES.IConfigService) private configService: IConfigService,
 		@inject(TYPES.IUsersService) private usersService: IUsersService,
-		@inject(TYPES.ICollectionsService) private collectionService: ICollectionsService
+		@inject(TYPES.ICollectionsService) private collectionService: ICollectionsService,
+		@inject(TYPES.CacheService) private cache: ICacheService
 	) {
 		super(logger);
 		const authMiddleware = new AuthMiddleware(configService);
@@ -136,12 +140,30 @@ export class CollectionsController extends BaseController {
 	async getMyCollections({ user, query }: Request, res: Response): Promise<void> {
 		const take = setDefaultQuery(Number(query.take), 8);
 		const skip = Number(query.skip);
+
+		const cacheKey = `collections:my:${user}:${objectToSearchParams({ take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const result = await this.collectionService.get(user, Math.floor(take), Number.isNaN(skip) ? 0 : Math.floor(skip));
+		this.cache.set(cacheKey, result, 1000 * 60).catch(() => null);
 		this.ok(res, result);
 	}
 
 	async findByQuery({ body: { q, take } }: Request<{}, {}, FindCollectionsDto>, res: Response): Promise<void> {
-		this.ok(res, await this.collectionService.findByQuery(q, take));
+		const cacheKey = `collections:by-query:${objectToSearchParams({ take, q })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const result = await this.collectionService.findByQuery(q, take);
+		this.cache.set(cacheKey, result, 1000 * 60).catch(() => null);
+		this.ok(res, result);
 	}
 
 	async getById({ params, cookies }: Request, res: Response, next: NextFunction): Promise<void> {
@@ -153,10 +175,21 @@ export class CollectionsController extends BaseController {
 				})
 			);
 		}
+
+		const cacheKey = `collections:${id}`;
+		const cachedResult = await this.cache.get<Collection>(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const token: string | undefined = cookies.accessToken;
 		const collection = await this.collectionService.getById(Math.floor(id), token);
 		if (collection instanceof Error) {
 			return next(collection);
+		}
+		if (!collection.private) {
+			this.cache.set(cacheKey, collection, 1000 * 60).catch(() => null);
 		}
 		this.ok(res, collection);
 	}
@@ -164,19 +197,49 @@ export class CollectionsController extends BaseController {
 	async getPopular({ query }: Request, res: Response): Promise<void> {
 		const take = setDefaultQuery(Number(query.take), 8);
 		const skip = !Number.isNaN(Number(query.skip)) ? Number(query.skip) : 0;
-		this.ok(res, await this.collectionService.getCollections(CollectionCategory.Popular, Math.floor(take), Math.floor(skip)));
+
+		const cacheKey = `collections:popular:${objectToSearchParams({ take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const result = await this.collectionService.getCollections(CollectionCategory.Popular, Math.floor(take), Math.floor(skip));
+		this.cache.set(cacheKey, result, 1000 * 60).catch(() => null);
+		this.ok(res, result);
 	}
 
 	async getNew({ query }: Request, res: Response): Promise<void> {
 		const take = setDefaultQuery(Number(query.take), 8);
 		const skip = !Number.isNaN(Number(query.skip)) ? Number(query.skip) : 0;
-		this.ok(res, await this.collectionService.getCollections(CollectionCategory.New, Math.floor(take), Math.floor(skip)));
+
+		const cacheKey = `collections:new:${objectToSearchParams({ take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const result = await this.collectionService.getCollections(CollectionCategory.New, Math.floor(take), Math.floor(skip));
+		this.cache.set(cacheKey, result, 1000 * 60).catch(() => null);
+		this.ok(res, result);
 	}
 
 	async getSubscs({ query, user }: Request, res: Response): Promise<void> {
 		const take = setDefaultQuery(Number(query.take), 8);
 		const skip = !Number.isNaN(Number(query.skip)) ? Number(query.skip) : 0;
-		this.ok(res, await this.collectionService.getFollowerCollections(user, Math.floor(take), Math.floor(skip)));
+
+		const cacheKey = `collections:subscs:${objectToSearchParams({ take, skip, user })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const result = await this.collectionService.getFollowerCollections(user, Math.floor(take), Math.floor(skip));
+		this.cache.set(cacheKey, result, 1000 * 60).catch(() => null);
+		this.ok(res, result);
 	}
 
 	async setAction({ params, user }: Request, res: Response, next: NextFunction): Promise<void> {
@@ -230,7 +293,17 @@ export class CollectionsController extends BaseController {
 	}
 
 	async getBest({ params }: Request, res: Response): Promise<void> {
-		const movies = await this.collectionService.getBestById(Number(params.id));
+		const id = Number(params.id);
+
+		const cacheKey = `collections:best:${id}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const movies = await this.collectionService.getBestById(id);
+		this.cache.set(cacheKey, movies, 1000 * 60).catch(() => null);
 		this.ok(res, movies);
 	}
 

@@ -4,6 +4,7 @@ export const TYPES = {
 
 	CommonDatabase: Symbol.for('CommonDatabase'),
 	MoviesDatabase: Symbol.for('MoviesDatabase'),
+	CacheService: Symbol.for('CacheService'),
 
 	ILoggerService: Symbol.for('ILoggerService'),
 	IUsersService: Symbol.for('IUsersService'),

@@ -30,6 +30,8 @@ import { collectionsContainer } from './collections/collections.container';
 import { bonusContainer } from './bonus/bonus.container';
 import { leaderboardContainer } from './leaderboard/leaderboard.container';
 import { AppController } from './app.controller';
+import { ICacheService } from './cache/cache.service.interface';
+import { CacheService } from './cache/cache.service';
 
 type ReturnTypeBootstrap = {
 	app: App;
@@ -47,6 +49,7 @@ const appContainer = new ContainerModule((bind: interfaces.Bind) => {
 	bind<IScheduleService>(TYPES.IScheduleService).to(ScheduleService).inSingletonScope();
 	bind<CommonDatabase>(TYPES.CommonDatabase).to(CommonDatabase).inSingletonScope();
 	bind<MoviesDatabase>(TYPES.MoviesDatabase).to(MoviesDatabase).inSingletonScope();
+	bind<ICacheService>(TYPES.CacheService).to(CacheService).inSingletonScope();
 	bind<AppController>(TYPES.AppController).to(AppController).inSingletonScope();
 });
 

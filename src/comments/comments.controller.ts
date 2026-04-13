@@ -19,6 +19,8 @@ import { HttpStatus } from '../helpers/http-status';
 import { CommentRejectDto } from './dto/comment-reject.dto';
 import { setDefaultQuery } from '../helpers/set-default-query';
 import { GetCommentsForAdminPanelDto } from './dto/get-comments-for-admin-panel.dto';
+import { ICacheService } from '../cache/cache.service.interface';
+import { objectToSearchParams } from '../helpers/object-to-params';
 
 @injectable()
 export class CommentsController extends BaseController {
@@ -27,7 +29,8 @@ export class CommentsController extends BaseController {
 		@inject(TYPES.IUsersService) private usersService: IUsersService,
 		@inject(TYPES.IConfigService) private configService: ConfigService,
 		@inject(TYPES.IRanksService) private ranksService: IRanksService,
-		@inject(TYPES.ICommentsService) private commentsService: ICommentsService
+		@inject(TYPES.ICommentsService) private commentsService: ICommentsService,
+		@inject(TYPES.CacheService) private cache: ICacheService
 	) {
 		super(logger);
 		const authMiddleware = new AuthMiddleware(configService);
@@ -144,10 +147,18 @@ export class CommentsController extends BaseController {
 				})
 			);
 		}
+		const cacheKey = `comments:by-movie:${movieId}:${objectToSearchParams({ take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const comments = await this.commentsService.getByMovieId({ movieId: Math.floor(movieId), skip, take });
 		if (comments instanceof Error) {
 			return next(comments);
 		}
+		this.cache.set(cacheKey, comments, 1000 * 60).catch(() => null);
 		this.ok(res, comments);
 	}
 
@@ -162,10 +173,19 @@ export class CommentsController extends BaseController {
 				})
 			);
 		}
+
+		const cacheKey = `comments:childrens:${parentId}:${objectToSearchParams({ take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const comments = await this.commentsService.getChildren(Math.floor(parentId), take, skip);
 		if (comments instanceof Error) {
 			return next(comments);
 		}
+		this.cache.set(cacheKey, comments, 1000 * 60).catch(() => null);
 		this.ok(res, comments);
 	}
 
@@ -195,10 +215,19 @@ export class CommentsController extends BaseController {
 				})
 			);
 		}
+
+		const cacheKey = `comments:counts:${id}`;
+		const cachedResult = await this.cache.get(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const count = await this.commentsService.getCount(id);
 		if (count instanceof Error) {
 			return next(count);
 		}
+		this.cache.set(cacheKey, count, 1000 * 60).catch(() => null);
 		this.ok(res, count);
 	}
 }

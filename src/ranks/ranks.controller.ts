@@ -15,6 +15,8 @@ import { ValidateMiddleware } from '../middlewares/validate.middleware';
 import { RankCreateDto } from './dto/rank-create.dto';
 import { HTTPError } from '../errors/http-error';
 import { HttpStatus } from '../helpers/http-status';
+import { ICacheService } from '../cache/cache.service.interface';
+import { objectToSearchParams } from '../helpers/object-to-params';
 
 @injectable()
 export class RanksController extends BaseController {
@@ -22,7 +24,8 @@ export class RanksController extends BaseController {
 		@inject(TYPES.ILoggerService) private logger: ILoggerService,
 		@inject(TYPES.IConfigService) private configService: IConfigService,
 		@inject(TYPES.IUsersService) private usersService: IUsersService,
-		@inject(TYPES.IRanksService) private ranksService: IRanksService
+		@inject(TYPES.IRanksService) private ranksService: IRanksService,
+		@inject(TYPES.CacheService) private cache: ICacheService
 	) {
 		super(logger);
 		this.bindRoutes('ranks', [
@@ -88,31 +91,59 @@ export class RanksController extends BaseController {
 	}
 
 	async get(req: Request, res: Response, next: NextFunction): Promise<void> {
+		const cacheKey = `ranks:all`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
 		const ranksOrError = await this.ranksService.getAllRanks();
 		if (ranksOrError instanceof Error) {
-			next(ranksOrError);
+			return next(ranksOrError);
 		}
+		this.cache.set(cacheKey, ranksOrError, 1000 * 60 * 60).catch(() => null);
 		this.ok(res, ranksOrError);
 	}
 
 	async getById({ params }: Request, res: Response, next: NextFunction): Promise<void> {
-		const rankOrError = await this.ranksService.getRank(Number(params.id));
+		const rankId = Number(params.id);
+
+		const cacheKey = `ranks:${rankId}`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const rankOrError = await this.ranksService.getRank(rankId);
 		if (rankOrError instanceof Error) {
 			return next(rankOrError);
 		}
+
+		this.cache.set(cacheKey, rankOrError, 1000 * 60 * 60).catch(() => null);
 		this.ok(res, rankOrError);
 	}
 
 	async getHistory({ user, query }: Request, res: Response, next: NextFunction): Promise<void> {
-		const take = Number(query.take);
-		const skip = Number(query.skip);
-		const historyOrError = await this.ranksService.getHistory(user, {
-			take: !Number.isNaN(take) ? Math.max(take, 5) : undefined,
-			skip: !Number.isNaN(skip) ? Math.max(skip, 0) : undefined
-		});
+		let take: number | undefined = Number(query.take);
+		let skip: number | undefined = Number(query.skip);
+
+		take = !Number.isNaN(take) ? Math.max(take, 5) : undefined;
+		skip = !Number.isNaN(skip) ? Math.max(skip, 0) : undefined;
+
+		const cacheKey = `ranks:history:${objectToSearchParams({ user, take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const historyOrError = await this.ranksService.getHistory(user, { take, skip });
 		if (historyOrError instanceof Error) {
 			return next(historyOrError);
 		}
+		this.cache.set(cacheKey, historyOrError, 1000 * 60).catch(() => null);
 		this.ok(res, historyOrError);
 	}
 }

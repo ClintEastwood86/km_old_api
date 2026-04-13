@@ -13,6 +13,9 @@ import { IConfigService } from '../configs/config.service.interface';
 import { ICommentRepository } from '../comments/comments.repository.interface';
 import { GetMoviesByArrayDto } from './dto/get-movie-by-array.dto';
 import { movieSorting } from '../enums/sort.enum';
+import { ICacheService } from '../cache/cache.service.interface';
+import { Movie } from '../../prisma/generated/movies';
+import { objectToSearchParams } from '../helpers/object-to-params';
 
 @injectable()
 export class MoviesController extends BaseController {
@@ -23,7 +26,8 @@ export class MoviesController extends BaseController {
 		@inject(TYPES.IMoviesService) private moviesService: IMoviesService,
 		@inject(TYPES.IUsersService) private usersService: IUsersService,
 		@inject(TYPES.IConfigService) private configService: IConfigService,
-		@inject(TYPES.ICommentsRepository) private commentsRepository: ICommentRepository
+		@inject(TYPES.ICommentsRepository) private commentsRepository: ICommentRepository,
+		@inject(TYPES.CacheService) private cache: ICacheService
 	) {
 		super(logger);
 		this.bindRoutes('movies', [
@@ -61,36 +65,86 @@ export class MoviesController extends BaseController {
 		this.limitMoviesPerRequest = Number(this.configService.get('LIMIT_MOVIES_PER_REQUEST')) || 25;
 	}
 
-	async getPaths(req: Request, res: Response): Promise<void> {
-		this.ok(res, await this.moviesService.getPaths());
+	async getPaths(_: Request, res: Response): Promise<void> {
+		const cacheKey = 'movies:paths';
+		const cachedResult = await this.cache.get<string[]>(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+		const result = await this.moviesService.getPaths();
+		this.cache.set(cacheKey, result, 1000 * 60 * 30).catch(() => null);
+		this.ok(res, result);
 	}
 
 	async getMovieByAlias({ params: { alias } }: Request, res: Response, next: NextFunction): Promise<void> {
+		const cacheKey = `movies:alias:${alias}`;
+		const cachedResult = await this.cache.get<Movie>(cacheKey).catch(() => null);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
 		const movieOrError = await this.moviesService.getMovieByAlias(alias);
 		if (movieOrError instanceof Error) {
 			return next(movieOrError);
 		}
+		this.cache.set(cacheKey, movieOrError, 1000 * 60).catch(() => null);
 		this.ok(res, movieOrError);
 	}
 
 	async getAllGenres(req: Request, res: Response): Promise<void> {
-		this.ok(res, await this.moviesService.getAllGenres());
+		const cacheKey = 'movies:genres';
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+		const genres = await this.moviesService.getAllGenres();
+		this.cache.set(cacheKey, genres, 1000 * 120).catch(() => null);
+		this.ok(res, genres);
 	}
 
 	async getAllCountries(req: Request, res: Response): Promise<void> {
-		this.ok(res, await this.moviesService.getAllCountries());
+		const cacheKey = 'movies:countries';
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+		const countries = await this.moviesService.getAllCountries();
+		this.cache.set(cacheKey, countries, 1000 * 120).catch(() => null);
+		this.ok(res, countries);
 	}
 
 	async getMoviesByQuery({ body, query }: Request<{}, {}, MoviesSearchDto>, res: Response): Promise<void> {
 		const take = Number(query.take) <= this.limitMoviesPerRequest ? Number(query.take) : this.limitMoviesPerRequest;
 		const skip = Number(query.skip) || 0;
-		this.ok(res, await this.moviesService.getMoviesByQuery(body, take, skip));
+
+		const cacheKey = `movies:by-query:${objectToSearchParams({ ...body, take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+		const movies = await this.moviesService.getMoviesByQuery(body, take, skip);
+		this.ok(res, movies);
+
+		this.cache.set(cacheKey, movies, 1000 * 60).catch(() => null);
 	}
 
 	async getCurrentTop({ query }: Request, res: Response, next: NextFunction): Promise<void> {
 		const take = Number(query.take) <= this.limitMoviesPerRequest ? Number(query.take) : this.limitMoviesPerRequest;
 		const skip = Number(query.skip) || 0;
-		this.ok(res, await this.moviesService.getCurrentTop(take, skip));
+
+		const cacheKey = `movies:top:${objectToSearchParams({ take, skip })}`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+		const movies = await this.moviesService.getCurrentTop(take, skip);
+		this.cache.set(cacheKey, movies, 1000 * 60).catch(() => null);
+		this.ok(res, movies);
 	}
 
 	async getMarkedMovies({ user, query }: Request, res: Response): Promise<void> {
@@ -100,11 +154,29 @@ export class MoviesController extends BaseController {
 		if (Number.isNaN(take) || take <= 0 || take > this.limitMoviesPerRequest) take = this.limitMoviesPerRequest;
 		if (Number.isNaN(skip) || skip < 0) skip = 0;
 
-		this.ok(res, await this.moviesService.getMarkedMovies(user, take, skip));
+		const cacheKey = `movies:marked:${objectToSearchParams({ take, skip, user })}`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const movies = await this.moviesService.getMarkedMovies(user, take, skip);
+		this.cache.set(cacheKey, movies, 1000 * 60).catch(() => null);
+		this.ok(res, movies);
 	}
 
 	async getMarkedMoviesId({ user }: Request, res: Response): Promise<void> {
-		this.ok(res, await this.moviesService.getMarkedMoviesId(user));
+		const cacheKey = `movies:marked-id:user:${user}`;
+		const cachedResult = await this.cache.get(cacheKey);
+		if (cachedResult) {
+			this.ok(res, cachedResult);
+			return;
+		}
+
+		const movies = await this.moviesService.getMarkedMoviesId(user);
+		this.cache.set(cacheKey, movies, 1000 * 60).catch(() => null);
+		this.ok(res, movies);
 	}
 
 	async getRandomMovie(req: Request, res: Response): Promise<void> {

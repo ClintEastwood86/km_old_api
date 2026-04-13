@@ -80,7 +80,7 @@ export class MoviesService implements IMoviesService {
 		if (user instanceof Error) {
 			return user;
 		}
-		return this.usersRepository.getMarks(email);
+		return (await this.usersRepository.getMarks(email)).reverse();
 	}
 
 	async getRandomMovie(): Promise<MovieShort> {
