@@ -6,6 +6,7 @@ import { HTTPError } from '../errors/http-error';
 import { HttpStatus } from '../helpers/http-status';
 import { ILoggerService } from '../logger/logger.service.interface';
 import { IConfigService } from '../configs/config.service.interface';
+import { fetch, ProxyAgent } from 'undici';
 
 @injectable()
 export class FeedbackService implements IFeedbackService {
@@ -53,8 +54,11 @@ export class FeedbackService implements IFeedbackService {
 			body.message_thread_id = Number.isNaN(topicNum) ? topicId : topicNum;
 		}
 
+		const proxy = this.configService.get('HTTP_PROXY');
+		const dispatcher = proxy ? new ProxyAgent(proxy) : undefined;
 		try {
 			const res = await fetch(`https://api.telegram.org/bot${token}/sendMessage`, {
+				dispatcher,
 				method: 'POST',
 				headers: { 'Content-Type': 'application/json' },
 				body: JSON.stringify(body)
