@@ -28,6 +28,7 @@ import { ScheduleService } from './schedule/schedule.service';
 import { commentsContainer } from './comments/comments.container';
 import { collectionsContainer } from './collections/collections.container';
 import { bonusContainer } from './bonus/bonus.container';
+import { feedbackContainer } from './feedback/feedback.container';
 import { leaderboardContainer } from './leaderboard/leaderboard.container';
 import { AppController } from './app.controller';
 import { ICacheService } from './cache/cache.service.interface';
@@ -64,6 +65,7 @@ const bootstrap = async (): Promise<ReturnTypeBootstrap> => {
 	container.load(commentsContainer);
 	container.load(collectionsContainer);
 	container.load(bonusContainer);
+	container.load(feedbackContainer);
 	container.load(leaderboardContainer);
 
 	const app = container.get<App>(TYPES.Application);

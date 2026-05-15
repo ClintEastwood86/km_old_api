@@ -23,6 +23,7 @@ import { CollectionsController } from './collections/collections.controller';
 import { IRanksService } from './ranks/ranks.service.interface';
 import { MoviesWebSocketController } from './movies/movies.websocket.controller';
 import { BonusController } from './bonus/bonus.controller';
+import { FeedbackController } from './feedback/feedback.controller';
 import { LeaderboardController } from './leaderboard/leaderboard.controller';
 import { loggerMiddleware } from './middlewares/logger.middleware';
 import { AppController } from './app.controller';
@@ -55,6 +56,7 @@ export class App {
 		@inject(TYPES.AwardsController) private awardsController: AwardsController,
 		@inject(TYPES.MoviesController) private moviesController: MoviesController,
 		@inject(TYPES.BonusController) private bonusController: BonusController,
+		@inject(TYPES.FeedbackController) private feedbackController: FeedbackController,
 		@inject(TYPES.IScheduleService) private scheduleService: IScheduleService,
 		@inject(TYPES.IUsersRepository) private usersRepository: IUsersRepository,
 		@inject(TYPES.CommentsController) private commentsController: CommentsController,
@@ -103,6 +105,7 @@ export class App {
 		this.router.use('/comments', this.commentsController.router);
 		this.router.use('/collections', this.collectionsController.router);
 		this.router.use('/bonus', this.bonusController.router);
+		this.router.use('/feedback', this.feedbackController.router);
 		this.router.use('/leaderboard', this.leaderboardController.router);
 	}
 

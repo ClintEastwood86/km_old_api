@@ -19,6 +19,7 @@ export const TYPES = {
 	ICommentsService: Symbol.for('ICommentsService'),
 	ICollectionsService: Symbol.for('ICollectionsService'),
 	IBonusService: Symbol.for('IBonusService'),
+	IFeedbackService: Symbol.for('IFeedbackService'),
 
 	IUsersRepository: Symbol.for('IUsersRepository'),
 	IRanksRepository: Symbol.for('IRanksRepository'),
@@ -38,6 +39,7 @@ export const TYPES = {
 	CommentsController: Symbol.for('CommentsController'),
 	CollectionsController: Symbol.for('CollectionsController'),
 	BonusController: Symbol.for('BonusController'),
+	FeedbackController: Symbol.for('FeedbackController'),
 
 	ILeaderboardService: Symbol.for('ILeaderboardService'),
 	ILeaderboardRepository: Symbol.for('ILeaderboardRepository'),
