@@ -171,16 +171,9 @@ model LeaderboardUserSnapshot {
 }
 
 model Player {
-    key   PlayerKey @id
+    key   String @id
     name  String
     order Int
-}
-
-enum PlayerKey {
-    VEOVEO
-    ALLOHA
-    COLLAPS
-    TURBO
 }
 
 enum StatusComment {
